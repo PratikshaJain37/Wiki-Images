@@ -80,37 +80,34 @@ table = soup.find("table", attrs={"class": 'mw-datatable listfiles'})
 
 
 
-rows = table.tbody.find("tr")
-row = wiki_image()
-
-
-column = rows.find("td", attrs={"class": "TablePager_col_img_timestamp"})
-row.timestamp = column.text
-
-for link in rows.find_all("a", href=True):
-    if link["href"].startswith("/wiki/File:"):
-        
-
-        link["title"] = link["title"].replace("File:", "")
-        link["title"] = link["title"].replace(".jpg", "")
-        
-        row.name = link["title"]
-
-    if link["href"].startswith("https://upload.wikimedia.org/wikipedia"):
-        row.path = (link["href"])
-
-      
-        break
-print(row.timestamp)
-print(row.name)
-print(row.path)
 
 
 
+for row in table.tbody.find_all("tr"):
 
+    temp = wiki_image()
 
+    column = row.find("td", attrs={"class": "TablePager_col_img_timestamp"})
+    temp.timestamp = column.text
 
+    for link in row.find_all("a", href=True):
+        if link["href"].startswith("/wiki/File:"):
+            
+
+            link["title"] = link["title"].replace("File:", "")
+            link["title"] = link["title"].replace(".jpg", "")
+            
+            temp.name = link["title"]
+
+        if link["href"].startswith("https://upload.wikimedia.org/wikipedia"):
+            temp.path = (link["href"])
 
         
-
+            break
+   
+    data.append(temp)
+   
+print(len(data))
 #---------------------------------------------#
+
+
