@@ -84,10 +84,6 @@ table = soup.find("table", attrs={"class": 'mw-datatable listfiles'})
 #print(table.tbody.find("tr"))
 #print(table.tbody.find_all("tr"))
 
-#for x in table.tbody.find_all("tr"):
-    #print(row.find("td", attrs={"class": 'TablePager_col_img_timestamp'}).text)
-    #print(x)
-
 
 
 for row in table.tbody.find_all("tr"):
@@ -98,6 +94,8 @@ for row in table.tbody.find_all("tr"):
     temp.timestamp = column.text
 
     for link in row.find_all("a", href=True):
+        print(link)
+        
         if link["href"].startswith("/wiki/File:"):
             
 
@@ -106,19 +104,22 @@ for row in table.tbody.find_all("tr"):
             
             temp.name = link["title"]
 
-
             temp.path = "https://commons.wikimedia.org" + link["href"]
 
         
             break
+        
 
     data.append(temp)
+    print(0)
+
    
 #---------------------------------------------#
 
 # Step 2
 
 for obj in data:
+
     URL_images = obj.path
 
     page_images = requests.get(URL_images)
@@ -128,6 +129,7 @@ for obj in data:
     headings = soup_images.find("div", attrs={"id": 'mw-imagepage-section-globalusage'})
 
     temp_images = wiki_page()
+
 
     if headings is not None:
         for link in headings.find_all("a", href=True):
@@ -144,6 +146,7 @@ for obj in data:
         obj.is_featured_image = True
 
 
+"""
 #---------------------------------------------#
 
 # Step 3
@@ -197,3 +200,4 @@ df.to_csv(r'test.csv', index=False, header=True)
     
 
 #---------------------------------------------#
+"""
