@@ -106,8 +106,8 @@ for row in table.tbody.find_all("tr"):
             
             temp.name = link["title"]
 
-        if link["href"].startswith("https://upload.wikimedia.org/wikipedia"):
-            temp.path = (link["href"])
+
+            temp.path = "https://commons.wikimedia.org" + link["href"]
 
         
             break
@@ -118,8 +118,30 @@ for row in table.tbody.find_all("tr"):
 
 # Step 2
 
+for obj in data:
+    URL_images = obj.path
 
+    page_images = requests.get(URL_images)
 
+    soup_images = BeautifulSoup(page_images.content, 'html.parser')
+
+    headings = soup_images.find("div", attrs={"id": 'mw-imagepage-section-globalusage'})
+
+    temp_images = wiki_page()
+
+    if headings is not None:
+        for link in headings.find_all("a", href=True):
+            if 'User:' in link["href"] or 'Talk:' in link["href"]:
+                continue
+            else:    
+                temp_images.name = link.text
+                temp_images.link = link["href"]
+
+                obj.usage_on_wikis.append(temp_images)
+
+    if s considered a Quality image
+    if 'This is a featured picture on' in soup_images:
+        obj.is_featured_image = True
 
 
 #---------------------------------------------#
@@ -139,7 +161,7 @@ headers = [
 ]
 
 df = pd.DataFrame(columns=headers)
-'''
+
 for obj in data:
     
     for index, page in enumerate(obj.usage_on_wikis):
@@ -170,7 +192,7 @@ for obj in data:
         "Featured In - Page" : obj.usage_on_wikis,
         "Featured In - Link" : obj.usage_on_wikis,
     }, ignore_index=True) 
-
+'''
 df.to_csv(r'test.csv', index=False, header=True)
     
 
