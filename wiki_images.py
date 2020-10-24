@@ -84,10 +84,6 @@ table = soup.find("table", attrs={"class": 'mw-datatable listfiles'})
 #print(table.tbody.find("tr"))
 #print(table.tbody.find_all("tr"))
 
-#for x in table.tbody.find_all("tr"):
-    #print(row.find("td", attrs={"class": 'TablePager_col_img_timestamp'}).text)
-    #print(x)
-
 
 
 for row in table.tbody.find_all("tr"):
@@ -98,6 +94,8 @@ for row in table.tbody.find_all("tr"):
     temp.timestamp = column.text
 
     for link in row.find_all("a", href=True):
+        print(link)
+        
         if link["href"].startswith("/wiki/File:"):
             
 
@@ -106,22 +104,35 @@ for row in table.tbody.find_all("tr"):
             
             temp.name = link["title"]
 
-        if link["href"].startswith("https://upload.wikimedia.org/wikipedia"):
-            temp.path = (link["href"])
+        
+            temp.path = "https://commons.wikimedia.org" + link["href"]
 
         
             break
+        
 
     data.append(temp)
+    print(0)
+
    
 #---------------------------------------------#
 
 # Step 2
 
+for obj in data:
+    
+    URL_image = obj.path
+
+    page_image = requests.get(URL_image)
+   
+    soup_image = BeautifulSoup(page_image.content, 'lxml')
+   
 
 
 
 
+
+"""
 #---------------------------------------------#
 
 # Step 3
@@ -175,3 +186,4 @@ df.to_csv(r'test.csv', index=False, header=True)
     
 
 #---------------------------------------------#
+"""
