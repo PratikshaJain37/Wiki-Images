@@ -85,9 +85,13 @@ for row in table.tbody.find_all("tr"):
 
 #---------------------------------------------#
 
-# Step 2
+# STEP 2:
+#2.1 visiting the page for each image (object)
+#2.2 accessing section "File usage on other wikis" (if it exists)
+#2.3 appending name and link of 'wiki pages' in usage_in_wikis (excluding "Talk:" and "User:")
+#2.4 checking if it is a 'Quality Image' or/and 'Featured Image'
 
-for obj in data:
+for obj in data:  #visiting page for each image (object)
 
     URL_images = obj.path
 
@@ -95,24 +99,25 @@ for obj in data:
 
     soup_images = BeautifulSoup(page_images.content, 'html.parser')
 
-    headings = soup_images.find("div", attrs={"id": 'mw-imagepage-section-globalusage'})
+    heading = soup_images.find("div", attrs={"id": 'mw-imagepage-section-globalusage'})  #accessing section "File usage on other wikis" (if it exists)
 
     obj.usage_on_wikis = []
     
-    if headings is not None:
-        for link in headings.find_all("a", href=True):
-            if 'User:' in link["href"] or 'Talk:' in link["href"]:
+    if heading is not None:     #finding 'wiki page' names and links 
+        for link in heading.find_all("a", href=True):
+            if 'User:' in link["href"] or 'Talk:' in link["href"]:   #filtering "User:" and "Talk:"
                 continue
             else:    
                 temp_images = wiki_page()
-                temp_images.name = link.text
-                temp_images.link = link["href"]
+                temp_images.name = link.text        #saving names of each wiki page correspoding the respective image (object) in class wiki_pages()
+                temp_images.link = link["href"]     #saving links of each wiki page correspoding the respective image (object) in class wiki_pages()
 
-                obj.usage_on_wikis.append(temp_images)
-                
+                obj.usage_on_wikis.append(temp_images)      #appending the wiki_pages() database in the list usage_in_wikis
 
-
-
+    if 'This image has been assessed using the Quality image guidelines and is considered a Quality image.' in soup_images.text:  #checking if it is a 'Quality Image'
+        obj.is_quality_image = True     
+    if 'This is a featured picture on' in soup_images.text:  #checking if it is a 'Featured Image'
+        obj.is_featured_image = True
 
 
 #---------------------------------------------#
