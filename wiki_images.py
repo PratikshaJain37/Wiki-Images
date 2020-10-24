@@ -97,18 +97,19 @@ for obj in data:
 
     headings = soup_images.find("div", attrs={"id": 'mw-imagepage-section-globalusage'})
 
-    temp_images = wiki_page()
-
-
+    obj.usage_on_wikis = []
+    
     if headings is not None:
         for link in headings.find_all("a", href=True):
             if 'User:' in link["href"] or 'Talk:' in link["href"]:
                 continue
             else:    
+                temp_images = wiki_page()
                 temp_images.name = link.text
                 temp_images.link = link["href"]
 
                 obj.usage_on_wikis.append(temp_images)
+                
 
 
 
@@ -137,6 +138,7 @@ for obj in data:
     if obj.usage_on_wikis == []:
         continue
     else:
+        
         for index, page in enumerate(obj.usage_on_wikis):
             
             if index == 0:
@@ -154,8 +156,9 @@ for obj in data:
                     "Featured In - Page" : page.name,
                     "Featured In - Link": page.link
                 }, ignore_index=True)
+           
 
-#df.to_csv(r'test2.csv', index=False, header=True)
+df.to_csv(r'test2.csv', index=False, header=True)
     
 
 #---------------------------------------------#
