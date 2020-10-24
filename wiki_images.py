@@ -11,6 +11,7 @@ Authors : Pratiksha Jain, Deepali Singh
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
+import csv
 
 #---------------------------------------------#
 
@@ -19,30 +20,38 @@ import pandas as pd
 class wiki_image():
 
    
-    timestamp = None  
+    timestamp = False  
     
-    name = None
+    name = False
     
-    path = None
+    path = False
     
+    is_quality_image = None
+
+    is_featured_image = None
+
     # List of wiki_page s
-    usage_on_wikis = None
-
-    usage_pages = None
-
+    usage_on_wikis = []
+        
 
 class wiki_page():
     
-    def __init__(self, name):
-        self.name = name
-    
-    def is_quality_image(self):
-        #self.quality_image = True/False
-        pass
+    name = False
 
-    def is_featured_image(self):
-        #self.featured.image = True/False
-        pass
+    link = False
+
+'''
+page = wiki_page()
+page2 = wiki_page()
+page3 = wiki_page()
+
+example = wiki_image()
+'''
+
+#print(len(example.usage_on_wikis))
+#example.usage_on_wikis.extend((page, page2, page3))
+#print(len(example.usage_on_wikis))
+
 
 
 #---------------------------------------------#
@@ -62,6 +71,7 @@ soup = BeautifulSoup(page.content, 'html.parser')
 #print(soup.title)
 #print(soup.title.text)
 
+#data = [example]
 data = []
 
 table = soup.find("table", attrs={"class": 'mw-datatable listfiles'})
@@ -77,9 +87,6 @@ table = soup.find("table", attrs={"class": 'mw-datatable listfiles'})
 #for x in table.tbody.find_all("tr"):
     #print(row.find("td", attrs={"class": 'TablePager_col_img_timestamp'}).text)
     #print(x)
-
-
-
 
 
 
@@ -104,10 +111,67 @@ for row in table.tbody.find_all("tr"):
 
         
             break
-   
+
     data.append(temp)
    
-print(len(data))
 #---------------------------------------------#
 
+# Step 2
 
+
+
+
+
+#---------------------------------------------#
+
+# Step 3
+
+# Putting it in csv
+
+headers = [
+    'Name', 
+    #'Path',
+    #'Time Stamp',
+    'Featured In - Page',
+    'Featured In - Link',
+    'Quality Image',
+    'Featured Image',
+]
+
+df = pd.DataFrame(columns=headers)
+'''
+for obj in data:
+    
+    for index, page in enumerate(obj.usage_on_wikis):
+        
+        if index == 0:
+            df = df.append({
+                'Name' : obj.name,
+                #'Path' : obj.path,
+                #'Time Stamp' : obj.timestamp,
+                'Quality Image' : obj.is_quality_image,
+                'Featured Image' : obj.is_featured_image,
+                "Featured In - Page" : page.name,
+                'Featured In - Link': page.link
+            }, ignore_index=True) 
+        else:
+            df = df.append({
+                "Featured In - Page" : page.name,
+                "Featured In - Link": page.link
+            }, ignore_index=True)
+'''
+for obj in data:
+    df = df.append({
+        'Name' : obj.name,
+        #'Path' : obj.path,
+        #'Time Stamp' : obj.timestamp,
+        'Quality Image' : obj.is_quality_image,
+        'Featured Image' : obj.is_featured_image,
+        "Featured In - Page" : obj.usage_on_wikis,
+        "Featured In - Link" : obj.usage_on_wikis,
+    }, ignore_index=True) 
+
+df.to_csv(r'test.csv', index=False, header=True)
+    
+
+#---------------------------------------------#
