@@ -40,19 +40,6 @@ class wiki_page():
 
     link = False
 
-'''
-page = wiki_page()
-page2 = wiki_page()
-page3 = wiki_page()
-
-example = wiki_image()
-'''
-
-#print(len(example.usage_on_wikis))
-#example.usage_on_wikis.extend((page, page2, page3))
-#print(len(example.usage_on_wikis))
-
-
 
 #---------------------------------------------#
 
@@ -65,26 +52,9 @@ page = requests.get(URL)
 
 soup = BeautifulSoup(page.content, 'html.parser')
 
-#print(page)
-#print(soup)
-
-#print(soup.title)
-#print(soup.title.text)
-
-#data = [example]
 data = []
 
 table = soup.find("table", attrs={"class": 'mw-datatable listfiles'})
-
-#print(table)
-#print(table.thead)
-#print(table.tbody)
-
-
-#print(table.tbody.find("tr"))
-#print(table.tbody.find_all("tr"))
-
-
 
 for row in table.tbody.find_all("tr"):
 
@@ -94,7 +64,7 @@ for row in table.tbody.find_all("tr"):
     temp.timestamp = column.text
 
     for link in row.find_all("a", href=True):
-        print(link)
+       
         
         if link["href"].startswith("/wiki/File:"):
             
@@ -111,9 +81,8 @@ for row in table.tbody.find_all("tr"):
         
 
     data.append(temp)
-    print(0)
 
-   
+
 #---------------------------------------------#
 
 # Step 2
@@ -141,12 +110,10 @@ for obj in data:
 
                 obj.usage_on_wikis.append(temp_images)
 
-    if s considered a Quality image
-    if 'This is a featured picture on' in soup_images:
-        obj.is_featured_image = True
 
 
-"""
+
+
 #---------------------------------------------#
 
 # Step 3
@@ -167,37 +134,28 @@ df = pd.DataFrame(columns=headers)
 
 for obj in data:
     
-    for index, page in enumerate(obj.usage_on_wikis):
-        
-        if index == 0:
-            df = df.append({
-                'Name' : obj.name,
-                #'Path' : obj.path,
-                #'Time Stamp' : obj.timestamp,
-                'Quality Image' : obj.is_quality_image,
-                'Featured Image' : obj.is_featured_image,
-                "Featured In - Page" : page.name,
-                'Featured In - Link': page.link
-            }, ignore_index=True) 
-        else:
-            df = df.append({
-                "Featured In - Page" : page.name,
-                "Featured In - Link": page.link
-            }, ignore_index=True)
-'''
-for obj in data:
-    df = df.append({
-        'Name' : obj.name,
-        #'Path' : obj.path,
-        #'Time Stamp' : obj.timestamp,
-        'Quality Image' : obj.is_quality_image,
-        'Featured Image' : obj.is_featured_image,
-        "Featured In - Page" : obj.usage_on_wikis,
-        "Featured In - Link" : obj.usage_on_wikis,
-    }, ignore_index=True) 
-'''
-df.to_csv(r'test.csv', index=False, header=True)
+    if obj.usage_on_wikis == []:
+        continue
+    else:
+        for index, page in enumerate(obj.usage_on_wikis):
+            
+            if index == 0:
+                df = df.append({
+                    'Name' : obj.name,
+                    #'Path' : obj.path,
+                    #'Time Stamp' : obj.timestamp,
+                    'Quality Image' : obj.is_quality_image,
+                    'Featured Image' : obj.is_featured_image,
+                    "Featured In - Page" : page.name,
+                    'Featured In - Link': page.link
+                }, ignore_index=True) 
+            else:
+                df = df.append({
+                    "Featured In - Page" : page.name,
+                    "Featured In - Link": page.link
+                }, ignore_index=True)
+
+#df.to_csv(r'test2.csv', index=False, header=True)
     
 
 #---------------------------------------------#
-"""
