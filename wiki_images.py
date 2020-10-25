@@ -5,21 +5,16 @@ Authors : Pratiksha Jain, Deepali Singh
 """
 
 #---------------------------------------------#
-
 # Libraries Used
 
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import csv
-
 #---------------------------------------------#
-
 # Defining classes for database
 
 class wiki_image():
-
-   
     timestamp = False  
     
     name = False
@@ -30,7 +25,7 @@ class wiki_image():
 
     is_featured_image = None
 
-    # List of wiki_page s
+    # List of wiki_pages
     usage_on_wikis = []
         
 
@@ -39,11 +34,7 @@ class wiki_page():
     name = False
 
     link = False
-
-
 #---------------------------------------------#
-
-
 # STEP 1 - Extracting data from Wiki and storing in a database
 
 URL = 'https://commons.wikimedia.org/wiki/Special:ListFiles?limit=500&user=Tagooty'
@@ -77,12 +68,9 @@ for row in table.tbody.find_all("tr"):
             temp.path = "https://commons.wikimedia.org" + link["href"]
 
         
-            break
-        
+            break    
 
     data.append(temp)
-
-
 #---------------------------------------------#
 
 # STEP 2:
@@ -112,19 +100,16 @@ for obj in data:  #visiting page for each image (object)
                 temp_images.name = link.text        #saving names of each wiki page correspoding the respective image (object) in class wiki_pages()
                 temp_images.link = link["href"]     #saving links of each wiki page correspoding the respective image (object) in class wiki_pages()
 
-                obj.usage_on_wikis.append(temp_images)      #appending the wiki_pages() database in the list usage_in_wikis
+                obj.usage_on_wikis.append(temp_images)      #appending the wiki_page() database in the list usage_in_wikis
 
     if 'This image has been assessed using the Quality image guidelines and is considered a Quality image.' in soup_images.text:  #checking if it is a 'Quality Image'
         obj.is_quality_image = True     
     if 'This is a featured picture on' in soup_images.text:  #checking if it is a 'Featured Image'
         obj.is_featured_image = True
 
-
 #---------------------------------------------#
 
-# Step 3
-
-# Putting it in csv
+# Step 3: Putting it in a .csv file
 
 headers = [
     'Name', 
@@ -165,5 +150,4 @@ for obj in data:
 
 df.to_csv(r'test2.csv', index=False, header=True)
     
-
 #---------------------------------------------#
