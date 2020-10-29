@@ -5,16 +5,26 @@ Authors : Pratiksha Jain, Deepali Singh
 """
 
 #---------------------------------------------#
+
 # Libraries Used
 
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import csv
+
 #---------------------------------------------#
+
 # Defining classes for database
 
+# Attributes of Wiki Image class corresponds to the columns in the main table on - attributes can be added/removed easily
+# https://commons.wikimedia.org/wiki/Special:ListFiles?limit=500&user=Tagooty
+# The is_quality)image and is_featured_image attributes have been initialised with None (blank) values - only True if true
+# The usage_on_wikis attribute contains a list of pages where it has been used on other wikis
+
+
 class wiki_image():
+
     timestamp = False  
     
     name = False
@@ -29,34 +39,44 @@ class wiki_image():
     usage_on_wikis = []
         
 
+# Attributes of each wiki_page correspond to the name and link of each of the required pages. 
 class wiki_page():
     
     name = False
 
     link = False
+
 #---------------------------------------------#
+
 # STEP 1 - Extracting data from Wiki and storing in a database
 
+# Defining the URL 
 URL = 'https://commons.wikimedia.org/wiki/Special:ListFiles?limit=500&user=Tagooty'
 
+# For parsing the content in the mentioned URL
 page = requests.get(URL)
-
 soup = BeautifulSoup(page.content, 'html.parser')
 
+# Initialising empty list for staoring wiki_image elements
 data = []
 
+# Finding required table in the webpage
 table = soup.find("table", attrs={"class": 'mw-datatable listfiles'})
 
+# Iterating inside all the row elements inside table
 for row in table.tbody.find_all("tr"):
 
+    # Creating an instance of a wiki_image
     temp = wiki_image()
 
+    # For finding its timestamp - can be commented out if not needed
     column = row.find("td", attrs={"class": "TablePager_col_img_timestamp"})
     temp.timestamp = column.text
 
+    # Finding links ('a' tags) in each row
     for link in row.find_all("a", href=True):
        
-        
+        # Finding the link which starts with 'File', because that is its title, and access to its wikimedia page
         if link["href"].startswith("/wiki/File:"):
             
 
@@ -66,11 +86,12 @@ for row in table.tbody.find_all("tr"):
             temp.name = link["title"]
 
             temp.path = "https://commons.wikimedia.org" + link["href"]
-
         
             break    
-
+    
+    # Adding the wiki_image instance to the database
     data.append(temp)
+
 #---------------------------------------------#
 
 # STEP 2:
@@ -111,6 +132,7 @@ for obj in data:  #visiting page for each image (object)
 
 # Step 3: Putting it in a .csv file
 
+# 'Path' and 'Time Stamp' can be uncommented as per the requirements
 headers = [
     'Name', 
     #'Path',
@@ -121,14 +143,17 @@ headers = [
     'Featured Image',
 ]
 
+# Initialisng an empty dataframe to store elements in data
 df = pd.DataFrame(columns=headers)
 
+# Storing all the required links and infomation in the dataframe - only if they have been used on other wikis
 for obj in data:
     
     if obj.usage_on_wikis == []:
         continue
     else:
         
+        # In case there are multiple usage_on_wikis links, to make them appear on separate lines
         for index, page in enumerate(obj.usage_on_wikis):
             
             if index == 0:
@@ -147,7 +172,7 @@ for obj in data:
                     "Featured In - Link": page.link
                 }, ignore_index=True)
            
-
-df.to_csv(r'test2.csv', index=False, header=True)
+# Giving output in csv file
+df.to_csv(r'Wiki_Images.csv', index=False, header=True)
     
 #---------------------------------------------#
