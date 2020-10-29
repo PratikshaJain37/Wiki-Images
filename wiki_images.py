@@ -6,12 +6,21 @@ Authors : Pratiksha Jain, Deepali Singh
 
 #---------------------------------------------#
 
+'''
+For running this script:
+
+1) The script is mainly Python3.7 compliant
+
+
+'''
+
+#---------------------------------------------#
+
 # Libraries Used
 
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
-import csv
 
 #---------------------------------------------#
 
@@ -100,7 +109,8 @@ for row in table.tbody.find_all("tr"):
 #2.3 appending name and link of 'wiki pages' in usage_in_wikis (excluding "Talk:" and "User:")
 #2.4 checking if it is a 'Quality Image' or/and 'Featured Image'
 
-for obj in data:  #visiting page for each image (object)
+#visiting page for each image (object)
+for obj in data:  
 
     URL_images = obj.path
 
@@ -108,24 +118,36 @@ for obj in data:  #visiting page for each image (object)
 
     soup_images = BeautifulSoup(page_images.content, 'html.parser')
 
-    heading = soup_images.find("div", attrs={"id": 'mw-imagepage-section-globalusage'})  #accessing section "File usage on other wikis" (if it exists)
+    #accessing section "File usage on other wikis" (if it exists)
+    heading = soup_images.find("div", attrs={"id": 'mw-imagepage-section-globalusage'})  
 
     obj.usage_on_wikis = []
     
-    if heading is not None:     #finding 'wiki page' names and links 
+    #finding 'wiki page' names and links 
+    if heading is not None:     
         for link in heading.find_all("a", href=True):
-            if 'User:' in link["href"] or 'Talk:' in link["href"]:   #filtering "User:" and "Talk:"
+
+            #filtering "User:" and "Talk:"
+            if 'User:' in link["href"] or 'Talk:' in link["href"]:   
                 continue
             else:    
                 temp_images = wiki_page()
-                temp_images.name = link.text        #saving names of each wiki page correspoding the respective image (object) in class wiki_pages()
-                temp_images.link = link["href"]     #saving links of each wiki page correspoding the respective image (object) in class wiki_pages()
 
-                obj.usage_on_wikis.append(temp_images)      #appending the wiki_page() database in the list usage_in_wikis
+                #saving names of each wiki page correspoding the respective image (object) in class wiki_pages()
+                temp_images.name = link.text  
 
-    if 'This image has been assessed using the Quality image guidelines and is considered a Quality image.' in soup_images.text:  #checking if it is a 'Quality Image'
-        obj.is_quality_image = True     
-    if 'This is a featured picture on' in soup_images.text:  #checking if it is a 'Featured Image'
+                #saving links of each wiki page correspoding the respective image (object) in class wiki_pages()      
+                temp_images.link = link["href"]     
+
+                #appending the wiki_page() database in the list usage_in_wikis
+                obj.usage_on_wikis.append(temp_images)      
+
+     #checking if it is a 'Quality Image'
+    if 'This image has been assessed using the Quality image guidelines and is considered a Quality image.' in soup_images.text: 
+        obj.is_quality_image = True   
+
+    #checking if it is a 'Featured Image'  
+    if 'This is a featured picture on' in soup_images.text:  
         obj.is_featured_image = True
 
 #---------------------------------------------#
