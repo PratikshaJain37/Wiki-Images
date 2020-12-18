@@ -269,6 +269,7 @@ def outputData(data, OUTPUT_FILE, COUNT_ONLY):
 
 #---------------------------------------------#
 
+
 if HELP_MENU == True:
     print("help options")
     sys.exit()
