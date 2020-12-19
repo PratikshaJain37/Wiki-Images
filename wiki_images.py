@@ -1,11 +1,10 @@
 """
 Wiki Images - Main script
+Version 1.1
 Authors : Pratiksha Jain, Deepali Singh
 
 """
-
 #---------------------------------------------#
-
 '''
 For running this script:
 
@@ -42,44 +41,46 @@ A new csv file, with the name 'Wiki_Images.csv' will appear, which has the requi
 (For running outside a virtual environment, step 1 can be eliminated, but dependencies may have to be updated later on.)
 
 '''
-
 #---------------------------------------------#
-
 # Libraries Used
-
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import getopt
 import sys
 from tqdm import tqdm
-
+import time
 #---------------------------------------------#
-
+# To check time taken
+counter_time = time.time()
+#---------------------------------------------#
 # Defining System Variables
 
 RUN = True  # For running the code
-
 HELP_MENU = False  #For help menu options
-
 OUTPUT_FILE = 'Wiki_Images.csv' # Output of program
-
 QUIET_MODE = False  # If no updates to be given while processing
-
 USER = 'Tagooty' # For user name
-
 MAX_FILES = -1  # Max files by user to search
-
 COUNT_ONLY = False # Count number of files only, without links
-
 SUMMARY_INFO = True
-
 VERSION = 'v1.1'
 
+HELP_OPTIONS = '''
+Wiki Images
+v1.1
+Authors: Pratiksha Jain, Deepali Singh
+-h, --help : Displays Help Menu
+-o, --outputfile <filename> : In case output is to be made on different file. Default is "Wiki_Images.csv"
+-q, --quietmode : Suppresses output on terminal
+-u, --user : Specifies user. Default is "Tagooty"
+-m, --maxfiles : Specifies maximum number of images to filter through
+-c, --countonly : If only image and number of wikis featured in is to be displayed
+-v, --version : Version number
+'''
+
 #---------------------------------------------#
-
-
-
+# For processing Command Line Arguments
 options, remainder = getopt.gnu_getopt(sys.argv[1:], 'ho:qu:m:csv', ['help','outputfile=',
 'quietmode',
 'user=',
@@ -90,7 +91,7 @@ options, remainder = getopt.gnu_getopt(sys.argv[1:], 'ho:qu:m:csv', ['help','out
 
 for opt, arg in options:
     if opt in ('-h'):
-        print('help options')
+        print(HELP_OPTIONS)
         RUN = False
     elif opt in ('-o', '--outputfile'):
         OUTPUT_FILE = arg + '.csv'
@@ -103,13 +104,10 @@ for opt, arg in options:
     elif opt in ('-c', '--countonly'):
         COUNT_ONLY = True
     elif opt in ('-v','--version'):
-        print('Version 1.1')
+        print('Wiki Images\nVersion 1.1\nPratiksha Jain and Deepali Singh')
         RUN = False
 
-        
-
 #---------------------------------------------#
-
 # Defining classes for database
 
 # Attributes of Wiki Image class corresponds to the columns in the main table on - attributes can be added/removed easily
@@ -117,161 +115,112 @@ for opt, arg in options:
 # The is_quality)image and is_featured_image attributes have been initialised with None (blank) values - only True if true
 # The usage_on_wikis attribute contains a list of pages where it has been used on other wikis
 
-
 class wiki_image():
-
     timestamp = False 
     name = False
     path = False
     is_quality_image = None
     is_featured_image = None
     usage_on_wikis = []  # List of wiki_pages
-        
 
 # Attributes of each wiki_page correspond to the name and link of each of the required pages. 
 class wiki_page():
-    
     name = False
     link = False
 
 #---------------------------------------------#
-
-# STEP 1 - Extracting data from Wiki and storing in a database
+# STEP 1: Extracting data from Main Wiki and storing in a database
 
 def parseData(USER='Tagooty', baseurl='https://commons.wikimedia.org/wiki/Special:ListFiles?limit=500&user=', url=False):
-    # Defining the URL 
-    if not url:
+    if not url: # Defining the URL
         URL = baseurl + USER
     else:
         URL = url
 
-    # For parsing the content in the mentioned URL
-    page = requests.get(URL)
-    soup = BeautifulSoup(page.content, 'html.parser')
-
+    page = requests.get(URL) # Getting the content
+    soup = BeautifulSoup(page.content, 'html.parser') # For parsing the content in the mentioned URL
     return soup
 
-def extractData(soup):
-    # Initialising empty list for storing wiki_image elements
-    data = []
+def extractData(soup, MAX_FILES):
+    
+    data = [] # Initialising empty list for storing wiki_image elements
+    table = soup.find("table", attrs={"class": 'mw-datatable listfiles'}) # Finding required table
 
-    # Finding required table in the webpage
-    table = soup.find("table", attrs={"class": 'mw-datatable listfiles'})
+    for row in table.tbody.find_all("tr"): # Iterating over all the row elements in table
+        temp = wiki_image() # Creating an instance of a wiki_image
+        column = row.find("td", attrs={"class": "TablePager_col_img_timestamp"}) 
+        temp.timestamp = column.text # For finding its timestamp 
 
-
-    # Iterating inside all the row elements inside table
-    for row in table.tbody.find_all("tr"):
-
-        # Creating an instance of a wiki_image
-        temp = wiki_image()
-
-        # For finding its timestamp - can be commented out if not needed
-        column = row.find("td", attrs={"class": "TablePager_col_img_timestamp"})
-        temp.timestamp = column.text
-
-        
-
-        # Finding links ('a' tags) in each row
-        for link in row.find_all("a", href=True):
-
-            # Finding the link which starts with 'File', because that is its title, and access to its wikimedia page
-            if link["href"].startswith("/wiki/File:"):
-                
-                
-
+        for link in row.find_all("a", href=True): # Finding links ('a' tags) in each row
+            if link["href"].startswith("/wiki/File:"): # Finding the link which starts with 'File'
                 link["title"] = link["title"].replace("File:", "")
-                link["title"] = link["title"].replace(".jpg", "")
-                
+                link["title"] = link["title"].replace(".jpg", "") # Cleaning name 
                 temp.name = link["title"]
-
                 temp.path = "https://commons.wikimedia.org" + link["href"]
-            
                 break    
-        
-        # Adding the wiki_image instance to the database
-        data.append(temp)
-
-    return data
-
-
-
+        data.append(temp) # Adding the wiki_image instance to the database
+ 
+    if MAX_FILES == -1: # Condition for max_files to go through
+        return data
+    else:
+        return data[:min(MAX_FILES, len(data))]
 
 #---------------------------------------------#
-
 # STEP 2:
 #2.1 visiting the page for each image (object)
 #2.2 accessing section "File usage on other wikis" (if it exists)
 #2.3 appending name and link of 'wiki pages' in usage_in_wikis (excluding "Talk:" and "User:")
 #2.4 checking if it is a 'Quality Image' or/and 'Featured Image'
 
-#visiting page for each image (object)
 
-def collectData(data, MAX_FILES):
+def collectData(obj):
+    soup_images = parseData(url=obj.path) # Visiting page for each image (object)
+    heading = soup_images.find("div", attrs={"id": 'mw-imagepage-section-globalusage'})  # Accessing section "File usage on other wikis" (if it exists)
+    obj.usage_on_wikis = [] # Initialising empty variable
+    bool_dataFiltered = False  # For counter for amount of data got after filtering
+
+    counter_link = 0 # Counter variabel counting number of links visited
+
+    if heading is not None:  
+        for counter_link, link in enumerate(heading.find_all("a", href=True)): # Finding 'wiki page' names and links 
+            if 'USER:' in link["href"] or 'User:' in link["href"]  or 'Talk:' in link["href"]:   # Filtering out "USER:" and "Talk:"
+                continue
+            else:    
+                temp_images = wiki_page()
+                temp_images.name = link.text  # Saving names of each wiki page correspoding the respective image (object) in class wiki_pages()
+                temp_images.link = link["href"]  # Saving links of each wiki page correspoding the respective image (object) in class wiki_pages() 
+                obj.usage_on_wikis.append(temp_images)  # Appending the wiki_page() database in the list usage_in_wikis
+                bool_dataFiltered = True      
+   
+    if 'This image has been assessed using the Quality image guidelines and is considered a Quality image.' in soup_images.text:  # Checking if it is a 'Quality Image'
+        obj.is_quality_image = True   
     
-    counter_links = 0
+    if 'This is a featured picture on' in soup_images.text:  # Checking if it is a 'Featured Image'  
+        obj.is_featured_image = True 
 
-    for obj,i  in zip(data, tqdm(range(-1,len(data)), desc='hey')):  
-
-        soup_images = parseData(url=obj.path)
-
-        #accessing section "File usage on other wikis" (if it exists)
-        heading = soup_images.find("div", attrs={"id": 'mw-imagepage-section-globalusage'})  
-
-        obj.usage_on_wikis = []
-        
-        #finding 'wiki page' names and links 
-        if heading is not None:     
-            for link in heading.find_all("a", href=True):
-                
-                counter_links += 1
-
-                #filtering "USER:" and "Talk:"
-                if 'USER:' in link["href"] or 'Talk:' in link["href"]:   
-                    continue
-                else:    
-                    temp_images = wiki_page()
-
-                    #saving names of each wiki page correspoding the respective image (object) in class wiki_pages()
-                    temp_images.name = link.text  
-
-                    #saving links of each wiki page correspoding the respective image (object) in class wiki_pages()      
-                    temp_images.link = link["href"]     
-
-                    #appending the wiki_page() database in the list usage_in_wikis
-                    obj.usage_on_wikis.append(temp_images)      
-
-        #checking if it is a 'Quality Image'
-        if 'This image has been assessed using the Quality image guidelines and is considered a Quality image.' in soup_images.text: 
-            obj.is_quality_image = True   
-
-        #checking if it is a 'Featured Image'  
-        if 'This is a featured picture on' in soup_images.text:  
-            obj.is_featured_image = True
-    
-    if MAX_FILES == -1:
-        return data, counter_links
-    else:
-        return data[:min(MAX_FILES, len(data))], counter_links
+    return obj, bool_dataFiltered, counter_link+1
 
 #---------------------------------------------#
+# Step 3: Displaying it in a .csv file
 
-# Step 3: Putting it in a .csv file
-
-def outputData(data, OUTPUT_FILE, COUNT_ONLY):
-    
-    if COUNT_ONLY == True:
+def outputData(data, COUNT_ONLY):
+    if COUNT_ONLY == True: # If only count of wikis featured in is required
         headers = [
             'Name',
             'Number of Wikis Featured In',
+            'Quality Image',
+            'Featured Image',
         ]
 
-        for obj in data:
-            df = pd.DataFrame(columns=headers)
+        df = pd.DataFrame(columns=headers) # Initialisng an empty dataframe to store elements in data
+
+        for obj in data: # Storing all the required links and infomation in the dataframe   
             df = df.append({
                             'Name' : obj.name,
-                            'Number of Wikis Featured In' : len(obj.usage_on_wikis)
+                            'Number of Wikis Featured In' : len(obj.usage_on_wikis),
+                            'Quality Image' : obj.is_quality_image,
+                            'Featured Image' : obj.is_featured_image,
                         }, ignore_index=True) 
-
 
     else:
         headers = [
@@ -283,21 +232,15 @@ def outputData(data, OUTPUT_FILE, COUNT_ONLY):
         'Quality Image',
         'Featured Image',
         ]
+        
+        df = pd.DataFrame(columns=headers) # Initialisng an empty dataframe to store elements in data
 
-        # Initialisng an empty dataframe to store elements in data
-        df = pd.DataFrame(columns=headers)
-
-        # Storing all the required links and infomation in the dataframe - only if they have been used on other wikis
-        for obj in data:
-
+        for obj in data:  # Storing all the required links and infomation in the dataframe - only if they have been used on other wikis
             if len(obj.usage_on_wikis) == 0:
                 continue
-            
+
             else:
-                
-                # In case there are multiple usage_on_wikis links, to make them appear on separate lines
-                for index, page in enumerate(obj.usage_on_wikis):
-                    
+                for index, page in enumerate(obj.usage_on_wikis):  # In case there are multiple usage_on_wikis links, to make them appear on separate lines
                     if index == 0:
                         df = df.append({
                             'Name' : obj.name,
@@ -313,25 +256,63 @@ def outputData(data, OUTPUT_FILE, COUNT_ONLY):
                             "Featured In - Page" : page.name,
                             "Featured In - Link": page.link
                         }, ignore_index=True)
-            
-        # Giving output in csv file
-        df.to_csv(OUTPUT_FILE, index=False, header=True)
-
-
-
-
+    return df
+        
 #---------------------------------------------#
+# Driver Code
 
-
-if RUN == False:
+if RUN == False: # Main check
     sys.exit()
 
-soup = parseData(USER=USER)
-data = extractData(soup)
+if QUIET_MODE == True: # If no output is to be given in terminal
+    soup = parseData(USER=USER)
+    data = extractData(soup, MAX_FILES)
+    
+    for obj in data: # Iterating over data
+        obj_filtered, bool_dataFiltered, counter_link = collectData(obj)
+        obj = obj_filtered
+    
+    df = outputData(data, COUNT_ONLY)
 
-data, counter_links = collectData(data, MAX_FILES)
-print(counter_links)
-outputData(data, OUTPUT_FILE, COUNT_ONLY)
+else:   # progress bar – QUIET_MODE == True (default)
+    soup = parseData(USER=USER)
+    data = extractData(soup, MAX_FILES)
+    print("\nData parsed and extracted.")
 
+    counter_dataFiltered = 0 # Counter for number of data that shows if featured on other wikis
+    print("")
+    counter_links = len(data)
+    
+    for obj, perc in zip(data, tqdm (range(len(data)), initial=1, desc="Filtering data...")): # Iterating over data, and showing progress bar
+        obj_filtered, bool_dataFiltered, counter_link = collectData(obj)
+        counter_links += counter_link # Counting the number of links that were visited - Adding to main counter
+        obj = obj_filtered
+        if bool_dataFiltered == True: # Condition - if it featured in other wikis
+            counter_dataFiltered += 1
 
+        
+
+    print("Filering complete.")
+
+    df = outputData(data, COUNT_ONLY) # Getting output as pandas dataframe
+    
+df.to_csv(OUTPUT_FILE, index=False, header=True) # Giving output in csv file
+print("\nExporting Complete. The csv file can be found as %s in your folder."%(OUTPUT_FILE))
+
+print("\nSUMMARY INFO:")      #summary info
+print("*Total files found --", len(data))
+print("*Total files used --", str(counter_dataFiltered) + " (" + str(round(counter_dataFiltered/len(data)*100,2))+"%)")
+print("*Total pages visited --", str(counter_links))
+print("*Total number of Quality Images -- ", end="")
+try:
+    print(df['Quality Image'].value_counts().at[True])
+except KeyError:
+    print(0)
+
+print("*Total number of Featured Images -- ",end='')
+try:
+    print(df['Featured Image'].value_counts().at[True])
+except KeyError:
+    print(0)
+print ("\n--- %s seconds taken ---" % round((time.time() - counter_time),2))
 #---------------------------------------------#
