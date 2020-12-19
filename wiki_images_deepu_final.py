@@ -4,9 +4,7 @@ Version 1.1
 Authors : Pratiksha Jain, Deepali Singh
 
 """
-
 #---------------------------------------------#
-
 '''
 For running this script:
 
@@ -43,12 +41,8 @@ A new csv file, with the name 'Wiki_Images.csv' will appear, which has the requi
 (For running outside a virtual environment, step 1 can be eliminated, but dependencies may have to be updated later on.)
 
 '''
-
-
 #---------------------------------------------#
-
 # Libraries Used
-
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -56,38 +50,24 @@ import getopt
 import sys
 from tqdm import tqdm
 import time
-
 #---------------------------------------------#
-
 # To check time taken
 counter_time = time.time()
-
 #---------------------------------------------#
-
 # Defining System Variables
 
 RUN = True  # For running the code
-
 HELP_MENU = False  #For help menu options
-
 OUTPUT_FILE = 'Wiki_Images.csv' # Output of program
-
 QUIET_MODE = False  # If no updates to be given while processing
-
 USER = 'Tagooty' # For user name
-
 MAX_FILES = -1  # Max files by user to search
-
 COUNT_ONLY = False # Count number of files only, without links
-
 SUMMARY_INFO = True
-
 VERSION = 'v1.1'
 
 #---------------------------------------------#
-
 # For processing Command Line Arguments
-
 options, remainder = getopt.gnu_getopt(sys.argv[1:], 'ho:qu:m:csv', ['help','outputfile=',
 'quietmode',
 'user=',
@@ -114,10 +94,7 @@ for opt, arg in options:
         print('Wiki Images\nVersion 1.1\nPratiksha Jain and Deepali Singh')
         RUN = False
 
-        
-
 #---------------------------------------------#
-
 # Defining classes for database
 
 # Attributes of Wiki Image class corresponds to the columns in the main table on - attributes can be added/removed easily
@@ -125,29 +102,23 @@ for opt, arg in options:
 # The is_quality)image and is_featured_image attributes have been initialised with None (blank) values - only True if true
 # The usage_on_wikis attribute contains a list of pages where it has been used on other wikis
 
-
 class wiki_image():
-
     timestamp = False 
     name = False
     path = False
     is_quality_image = None
     is_featured_image = None
     usage_on_wikis = []  # List of wiki_pages
-        
 
 # Attributes of each wiki_page correspond to the name and link of each of the required pages. 
 class wiki_page():
-    
     name = False
     link = False
 
 #---------------------------------------------#
-
 # STEP 1: Extracting data from Main Wiki and storing in a database
 
 def parseData(USER='Tagooty', baseurl='https://commons.wikimedia.org/wiki/Special:ListFiles?limit=500&user=', url=False):
-     
     if not url: # Defining the URL
         URL = baseurl + USER
     else:
@@ -161,30 +132,21 @@ def parseData(USER='Tagooty', baseurl='https://commons.wikimedia.org/wiki/Specia
 def extractData(soup, MAX_FILES):
     
     data = [] # Initialising empty list for storing wiki_image elements
-
     table = soup.find("table", attrs={"class": 'mw-datatable listfiles'}) # Finding required table
 
     for row in table.tbody.find_all("tr"): # Iterating over all the row elements in table
-
         temp = wiki_image() # Creating an instance of a wiki_image
-
         column = row.find("td", attrs={"class": "TablePager_col_img_timestamp"}) 
         temp.timestamp = column.text # For finding its timestamp 
 
         for link in row.find_all("a", href=True): # Finding links ('a' tags) in each row
-            
             if link["href"].startswith("/wiki/File:"): # Finding the link which starts with 'File'
-                
-
                 link["title"] = link["title"].replace("File:", "")
-                link["title"] = link["title"].replace(".jpg", "") # Cleaning name
-                
+                link["title"] = link["title"].replace(".jpg", "") # Cleaning name 
                 temp.name = link["title"]
                 temp.path = "https://commons.wikimedia.org" + link["href"]
                 break    
-        
         data.append(temp) # Adding the wiki_image instance to the database
-
  
     if MAX_FILES == -1: # Condition for max_files to go through
         return data
@@ -192,7 +154,6 @@ def extractData(soup, MAX_FILES):
         return data[:min(MAX_FILES, len(data))]
 
 #---------------------------------------------#
-
 # STEP 2:
 #2.1 visiting the page for each image (object)
 #2.2 accessing section "File usage on other wikis" (if it exists)
@@ -201,20 +162,15 @@ def extractData(soup, MAX_FILES):
 
 
 def collectData(obj):
-
     soup_images = parseData(url=obj.path) # Visiting page for each image (object)
-
     heading = soup_images.find("div", attrs={"id": 'mw-imagepage-section-globalusage'})  # Accessing section "File usage on other wikis" (if it exists)
-
     obj.usage_on_wikis = [] # Initialising empty variable
-
     bool_dataFiltered = False  # For counter for amount of data got after filtering
 
     counter_link = 0
 
     if heading is not None:  
         for counter_link, link in enumerate(heading.find_all("a", href=True)): # Finding 'wiki page' names and links 
-
             if 'USER:' in link["href"] or 'User:' in link["href"]  or 'Talk:' in link["href"]:   # Filtering out "USER:" and "Talk:"
                 continue
             else:    
@@ -233,11 +189,9 @@ def collectData(obj):
     return obj, bool_dataFiltered, counter_link
 
 #---------------------------------------------#
-
 # Step 3: Displaying it in a .csv file
 
 def outputData(data, COUNT_ONLY):
-    
     if COUNT_ONLY == True: # If only count of wikis featured in is required
         headers = [
             'Name',
@@ -246,8 +200,7 @@ def outputData(data, COUNT_ONLY):
 
         df = pd.DataFrame(columns=headers) # Initialisng an empty dataframe to store elements in data
 
-        for obj in data: # Storing all the required links and infomation in the dataframe
-            
+        for obj in data: # Storing all the required links and infomation in the dataframe   
             df = df.append({
                             'Name' : obj.name,
                             'Number of Wikis Featured In' : len(obj.usage_on_wikis)
@@ -267,14 +220,11 @@ def outputData(data, COUNT_ONLY):
         df = pd.DataFrame(columns=headers) # Initialisng an empty dataframe to store elements in data
 
         for obj in data:  # Storing all the required links and infomation in the dataframe - only if they have been used on other wikis
-
             if len(obj.usage_on_wikis) == 0:
                 continue
-            
+
             else:
-                
                 for index, page in enumerate(obj.usage_on_wikis):  # In case there are multiple usage_on_wikis links, to make them appear on separate lines
-                    
                     if index == 0:
                         df = df.append({
                             'Name' : obj.name,
@@ -291,11 +241,9 @@ def outputData(data, COUNT_ONLY):
                             "Featured In - Link": page.link
                         }, ignore_index=True)
             
-        
     return df
         
 #---------------------------------------------#
-
 # Driver Code
 
 if RUN == False: # Main check
@@ -306,19 +254,17 @@ if QUIET_MODE == True:
     data = extractData(soup, MAX_FILES)
     
     for obj in data: 
-
         obj_filtered, bool_dataFiltered, counter_link = collectData(obj)
         if bool_dataFiltered == True:
             obj = obj_filtered
     
     df = outputData(data, COUNT_ONLY)
 
-
-else: 
+else:   #progress bar – QUIET_MODE == True (default)
     soup = parseData(USER=USER)
     data = extractData(soup, MAX_FILES)
     print("\nData parsed and extracted.")
-    
+
     counter_dataFiltered = 0
     print("")
     counter_links = len(data)
@@ -328,21 +274,17 @@ else:
         if bool_dataFiltered == True:
             obj = obj_filtered
             counter_dataFiltered += 1
-
     print("Filering complete.")
+
     df = outputData(data, COUNT_ONLY)
     
-
 df.to_csv(OUTPUT_FILE, index=False, header=True) # Giving output in csv file
 print("\nExporting Complete. The csv file can be found as %s in your folder."%(OUTPUT_FILE))
 
-
-print("\nSUMMARY INFO:")
+print("\nSUMMARY INFO:")      #summary info
 print("*Total files found --", len(data))
-print("*Total files used --", str(counter_dataFiltered))
+print("*Total files used --", str(counter_dataFiltered) + " (" + str(round(counter_dataFiltered/len(data)*100,2))+"%)")
 print("*Total pages visited --", str(counter_links))
 print("*Total number of Quality Images --",df['Quality Image'].value_counts().at[True])
 print("*Total number of Featured Images --",df['Featured Image'].value_counts().at[True])
-
-
-print ("--- %s seconds taken ---" % (time.time() - counter_time))
+print ("\n--- %s seconds taken ---" % round((time.time() - counter_time),2))
