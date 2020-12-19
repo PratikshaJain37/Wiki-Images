@@ -66,6 +66,19 @@ COUNT_ONLY = False # Count number of files only, without links
 SUMMARY_INFO = True
 VERSION = 'v1.1'
 
+HELP_OPTIONS = '''
+Wiki Images
+v1.1
+Authors: Pratiksha Jain, Deepali Singh
+-h, --help : Displays Help Menu
+-o, --outputfile <filename> : In case output is to be made on different file. Default is "Wiki_Images.csv"
+-q, --quietmode : Suppresses output on terminal
+-u, --user : Specifies user. Default is "Tagooty"
+-m, --maxfiles : Specifies maximum number of images to filter through
+-c, --countonly : If only image and number of wikis featured in is to be displayed
+-v, --version : Version number
+'''
+
 #---------------------------------------------#
 # For processing Command Line Arguments
 options, remainder = getopt.gnu_getopt(sys.argv[1:], 'ho:qu:m:csv', ['help','outputfile=',
@@ -78,7 +91,7 @@ options, remainder = getopt.gnu_getopt(sys.argv[1:], 'ho:qu:m:csv', ['help','out
 
 for opt, arg in options:
     if opt in ('-h'):
-        print('help options')
+        print(HELP_OPTIONS)
         RUN = False
     elif opt in ('-o', '--outputfile'):
         OUTPUT_FILE = arg + '.csv'
@@ -126,7 +139,6 @@ def parseData(USER='Tagooty', baseurl='https://commons.wikimedia.org/wiki/Specia
 
     page = requests.get(URL) # Getting the content
     soup = BeautifulSoup(page.content, 'html.parser') # For parsing the content in the mentioned URL
-
     return soup
 
 def extractData(soup, MAX_FILES):
@@ -167,7 +179,7 @@ def collectData(obj):
     obj.usage_on_wikis = [] # Initialising empty variable
     bool_dataFiltered = False  # For counter for amount of data got after filtering
 
-    counter_link = 0
+    counter_link = 0 # Counter variabel counting number of links visited
 
     if heading is not None:  
         for counter_link, link in enumerate(heading.find_all("a", href=True)): # Finding 'wiki page' names and links 
@@ -196,6 +208,8 @@ def outputData(data, COUNT_ONLY):
         headers = [
             'Name',
             'Number of Wikis Featured In',
+            'Quality Image',
+            'Featured Image',
         ]
 
         df = pd.DataFrame(columns=headers) # Initialisng an empty dataframe to store elements in data
@@ -203,7 +217,9 @@ def outputData(data, COUNT_ONLY):
         for obj in data: # Storing all the required links and infomation in the dataframe   
             df = df.append({
                             'Name' : obj.name,
-                            'Number of Wikis Featured In' : len(obj.usage_on_wikis)
+                            'Number of Wikis Featured In' : len(obj.usage_on_wikis),
+                            'Quality Image' : obj.is_quality_image,
+                            'Featured Image' : obj.is_featured_image,
                         }, ignore_index=True) 
 
     else:
@@ -240,7 +256,6 @@ def outputData(data, COUNT_ONLY):
                             "Featured In - Page" : page.name,
                             "Featured In - Link": page.link
                         }, ignore_index=True)
-            
     return df
         
 #---------------------------------------------#
@@ -249,34 +264,33 @@ def outputData(data, COUNT_ONLY):
 if RUN == False: # Main check
     sys.exit()
 
-if QUIET_MODE == True:
+if QUIET_MODE == True: # If no output is to be given in terminal
     soup = parseData(USER=USER)
     data = extractData(soup, MAX_FILES)
     
-    for obj in data: 
+    for obj in data: # Iterating over data
         obj_filtered, bool_dataFiltered, counter_link = collectData(obj)
-        if bool_dataFiltered == True:
-            obj = obj_filtered
+        obj = obj_filtered
     
     df = outputData(data, COUNT_ONLY)
 
-else:   #progress bar – QUIET_MODE == True (default)
+else:   # progress bar – QUIET_MODE == True (default)
     soup = parseData(USER=USER)
     data = extractData(soup, MAX_FILES)
     print("\nData parsed and extracted.")
 
-    counter_dataFiltered = 0
+    counter_dataFiltered = 0 # Counter for number of data that shows if featured on other wikis
     print("")
     counter_links = len(data)
-    for obj, perc in zip(data, tqdm (range(len(data)), desc="Filering data...")): 
+    for obj, perc in zip(data, tqdm (range(-1,len(data)), desc="Filering data...")): # Iterating over data, and showing progress bar
         obj_filtered, bool_dataFiltered, counter_link = collectData(obj)
-        counter_links += counter_link
-        if bool_dataFiltered == True:
+        counter_links += counter_link # Counting the number of links that were visited - Adding to main counter
+        if bool_dataFiltered == True: # Condition - if it featured in other wikis
             obj = obj_filtered
             counter_dataFiltered += 1
     print("Filering complete.")
 
-    df = outputData(data, COUNT_ONLY)
+    df = outputData(data, COUNT_ONLY) # Getting output as pandas dataframe
     
 df.to_csv(OUTPUT_FILE, index=False, header=True) # Giving output in csv file
 print("\nExporting Complete. The csv file can be found as %s in your folder."%(OUTPUT_FILE))
@@ -288,3 +302,4 @@ print("*Total pages visited --", str(counter_links))
 print("*Total number of Quality Images --",df['Quality Image'].value_counts().at[True])
 print("*Total number of Featured Images --",df['Featured Image'].value_counts().at[True])
 print ("\n--- %s seconds taken ---" % round((time.time() - counter_time),2))
+#---------------------------------------------#
