@@ -68,7 +68,7 @@ VERSION = 'v1.1'
 
 HELP_OPTIONS = '''
 Wiki Images
-v1.1
+v1.2
 Authors: Pratiksha Jain, Deepali Singh
 -h, --help : Displays Help Menu
 -o, --outputfile <filename> : In case output is to be made on different file. Default is "Wiki_Images.csv"
