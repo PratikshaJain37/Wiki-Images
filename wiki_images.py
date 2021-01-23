@@ -1,6 +1,6 @@
 """
 Wiki Images - Main script
-Version 1.1
+Version 1.2
 Authors : Pratiksha Jain, Deepali Singh
 
 """
@@ -179,10 +179,10 @@ def collectData(obj):
     obj.usage_on_wikis = [] # Initialising empty variable
     bool_dataFiltered = False  # For counter for amount of data got after filtering
 
-    counter_link = 0 # Counter variabel counting number of links visited
+    counter_UsageOnWikis = 0 # Counter variable counting number of links crawled
 
     if heading is not None:  
-        for counter_link, link in enumerate(heading.find_all("a", href=True)): # Finding 'wiki page' names and links 
+        for index, link in enumerate(heading.find_all("a", href=True)): # Finding 'wiki page' names and links 
             if 'USER:' in link["href"] or 'User:' in link["href"]  or 'Talk:' in link["href"]:   # Filtering out "USER:" and "Talk:"
                 continue
             else:    
@@ -190,15 +190,16 @@ def collectData(obj):
                 temp_images.name = link.text  # Saving names of each wiki page correspoding the respective image (object) in class wiki_pages()
                 temp_images.link = link["href"]  # Saving links of each wiki page correspoding the respective image (object) in class wiki_pages() 
                 obj.usage_on_wikis.append(temp_images)  # Appending the wiki_page() database in the list usage_in_wikis
+                counter_UsageOnWikis =+ 1
                 bool_dataFiltered = True      
-   
+    
     if 'This image has been assessed using the Quality image guidelines and is considered a Quality image.' in soup_images.text:  # Checking if it is a 'Quality Image'
         obj.is_quality_image = True   
     
     if 'This is a featured picture on' in soup_images.text:  # Checking if it is a 'Featured Image'  
         obj.is_featured_image = True 
 
-    return obj, bool_dataFiltered, counter_link+1
+    return obj, bool_dataFiltered, counter_UsageOnWikis # +1 because of indexing with 0
 
 #---------------------------------------------#
 # Step 3: Displaying it in a .csv file
@@ -237,7 +238,13 @@ def outputData(data, COUNT_ONLY):
 
         for obj in data:  # Storing all the required links and infomation in the dataframe - only if they have been used on other wikis
             if len(obj.usage_on_wikis) == 0:
-                continue
+                df = df.append({
+                            'Name' : obj.name,
+                            #'Path' : obj.path,
+                            #'Time Stamp' : obj.timestamp,
+                            'Quality Image' : obj.is_quality_image,
+                            'Featured Image' : obj.is_featured_image,
+                        }, ignore_index=True) 
 
             else:
                 for index, page in enumerate(obj.usage_on_wikis):  # In case there are multiple usage_on_wikis links, to make them appear on separate lines
@@ -269,7 +276,7 @@ if QUIET_MODE == True: # If no output is to be given in terminal
     data = extractData(soup, MAX_FILES)
     
     for obj in data: # Iterating over data
-        obj_filtered, bool_dataFiltered, counter_link = collectData(obj)
+        obj_filtered, bool_dataFiltered, counter_UsageOnWikis = collectData(obj)
         obj = obj_filtered
     
     df = outputData(data, COUNT_ONLY)
@@ -281,11 +288,11 @@ else:   # progress bar – QUIET_MODE == True (default)
 
     counter_dataFiltered = 0 # Counter for number of data that shows if featured on other wikis
     print("")
-    counter_links = len(data)
+    counter_UsageOnWikis_total = len(data)+1
     
     for obj, perc in zip(data, tqdm (range(len(data)), initial=1, desc="Filtering data...")): # Iterating over data, and showing progress bar
-        obj_filtered, bool_dataFiltered, counter_link = collectData(obj)
-        counter_links += counter_link # Counting the number of links that were visited - Adding to main counter
+        obj_filtered, bool_dataFiltered, counter_UsageOnWikis = collectData(obj)
+        counter_UsageOnWikis_total += counter_UsageOnWikis # Counting the number of links that were visited - Adding to main counter
         obj = obj_filtered
         if bool_dataFiltered == True: # Condition - if it featured in other wikis
             counter_dataFiltered += 1
@@ -300,9 +307,9 @@ df.to_csv(OUTPUT_FILE, index=False, header=True) # Giving output in csv file
 print("\nExporting Complete. The csv file can be found as %s in your folder."%(OUTPUT_FILE))
 
 print("\nSUMMARY INFO:")      #summary info
-print("*Total files found --", len(data))
-print("*Total files used --", str(counter_dataFiltered) + " (" + str(round(counter_dataFiltered/len(data)*100,2))+"%)")
-print("*Total pages visited --", str(counter_links))
+print("*Total media found --", len(data))
+print("*Number of media used in other wikis --", str(counter_dataFiltered) + " (" + str(round(counter_dataFiltered/len(data)*100,2))+"%)")
+print("*Total pages which have your media featured on them -- ", str(counter_UsageOnWikis_total))
 print("*Total number of Quality Images -- ", end="")
 try:
     print(df['Quality Image'].value_counts().at[True])
