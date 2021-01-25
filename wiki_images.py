@@ -263,8 +263,8 @@ def outputData(data, COUNT_ONLY):
             if len(obj.usage_on_wikis) == 0:
                 continue
             else:
-                for index, page in enumerate(obj.usage_on_wikis):  # In case there are multiple usage_on_wikis links, to make them appear on separate lines
-                    if index == 0:
+                for index, page in enumerate(obj.usage_on_wikis):  # Uncomment if-else statement in the loop -- in case you want multiple usage_on_wikis links to appear on separate lines (with white spaces in Featured-In column)
+                    # if index == 0:
                         df = df.append({
                             'Name' : obj.name,
                             #'Path' : obj.path,
@@ -274,11 +274,11 @@ def outputData(data, COUNT_ONLY):
                             "Featured In - Page" : page.name,
                             'Featured In - Link': page.link
                         }, ignore_index=True) 
-                    else:
-                        df = df.append({
-                            "Featured In - Page" : page.name,
-                            "Featured In - Link": page.link
-                        }, ignore_index=True)
+                    # else:
+                    #     df = df.append({
+                    #         "Featured In - Page" : page.name,
+                    #         "Featured In - Link": page.link
+                    #     }, ignore_index=True)
     return df
         
 #---------------------------------------------#
