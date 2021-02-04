@@ -261,6 +261,7 @@ def outputData(data, COUNT_ONLY):
         'Featured In - Link',
         'Quality Image',
         'Featured Image',
+        'Valued Image',
         ]
         
         df = pd.DataFrame(columns=headers) # Initialisng an empty dataframe to store elements in data
