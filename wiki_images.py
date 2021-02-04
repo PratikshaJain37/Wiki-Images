@@ -63,6 +63,7 @@ import time
 counter_time = time.time() # To check time taken
 counter_qualityImage = 0 # Number of quality images
 counter_featuredImage = 0 # Number of featured images
+counter_valuedImage = 0 # Number of valued images
 counter_dataFiltered = 0 # Number of media featured on other wikis
 counter_UsageOnWikis = 0 # Number of pages which media has been featured in
 
@@ -137,6 +138,7 @@ class wiki_image():
     path = False
     is_quality_image = None
     is_featured_image = None
+    is_valued_image = None
     usage_on_wikis = []  # List of wiki_pages
 
 # Attributes of each wiki_page correspond to the name and link of each of the required pages. 
@@ -193,7 +195,7 @@ def extractData(soup, MAX_FILES):
 
 def collectData(obj):
     # global variables-counters
-    global counter_featuredImage, counter_qualityImage, counter_UsageOnWikis
+    global counter_featuredImage, counter_qualityImage, counter_valuedImage, counter_UsageOnWikis
 
     soup_images = parseData(url=obj.path) # Visiting page for each image (object)
     heading = soup_images.find("div", attrs={"id": 'mw-imagepage-section-globalusage'})  # Accessing section "File usage on other wikis" (if it exists)
@@ -220,6 +222,10 @@ def collectData(obj):
     if 'This is a featured picture on' in soup_images.text:  # Checking if it is a 'Featured Image'  
         obj.is_featured_image = True 
         counter_featuredImage += 1
+
+    if 'This image has been assessed under the valued image criteria and is considered the most valued image on Commons' in soup_images.text:  # Checking if it is a 'Valued Image'  
+        obj.is_valued_image = True 
+        counter_valuedImage += 1
 
     return obj, bool_dataFiltered
 
@@ -271,6 +277,7 @@ def outputData(data, COUNT_ONLY):
                             #'Time Stamp' : obj.timestamp,
                             'Quality Image' : obj.is_quality_image,
                             'Featured Image' : obj.is_featured_image,
+                            'Valued Image' : obj.is_valued_image,
                             "Featured In - Page" : page.name,
                             'Featured In - Link': page.link
                         }, ignore_index=True) 
@@ -278,6 +285,7 @@ def outputData(data, COUNT_ONLY):
                     #     df = df.append({
                     #         "Featured In - Page" : page.name,
                     #         "Featured In - Link": page.link
+                    
                     #     }, ignore_index=True)
     return df
         
@@ -320,6 +328,7 @@ print("*Number of media used in other wikis --", str(counter_dataFiltered) + " (
 print("*Total pages which have the media featured on them -- ", str(counter_UsageOnWikis))
 print("*Total number of Quality Images -- ", counter_qualityImage)
 print("*Total number of Featured Images -- ", counter_featuredImage)
+print("*Total number of Valued Images -- ", counter_valuedImage)
 print ("\n--- %s seconds taken ---" % round((time.time() - counter_time),2))
 
 #---------------------------------------------#
