@@ -1,6 +1,6 @@
 """
 Wiki Images - Main script
-Version 1.2
+Version 1.2.2
 Authors : Pratiksha Jain, Deepali Singh
 
 """
@@ -79,7 +79,7 @@ USER = 'Tagooty' # For user name
 MAX_FILES = -1  # Max files by user to search
 COUNT_ONLY = False # Count number of files only, without links
 SUMMARY_INFO = True
-VERSION = 'v1.2'
+VERSION = 'v1.2.2'
 
 HELP_OPTIONS = '''
 Wiki Images
@@ -120,7 +120,7 @@ for opt, arg in options:
     elif opt in ('-c', '--countonly'):
         COUNT_ONLY = True
     elif opt in ('-v','--version'):
-        print('Wiki Images\nVersion 1.1\nPratiksha Jain and Deepali Singh')
+        print('Wiki Images\nVersion 1.2.2\nPratiksha Jain and Deepali Singh')
         RUN = False
 
 #---------------------------------------------#
