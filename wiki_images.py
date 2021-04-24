@@ -83,15 +83,15 @@ VERSION = 'v1.2.2'
 
 HELP_OPTIONS = '''
 Wiki Images
-v1.2
+v1.2.2
 Authors: Pratiksha Jain, Deepali Singh
--h, --help : Displays Help Menu
+-h, --help                  : Displays Help Menu
 -o, --outputfile <filename> : In case output is to be made on different file. Default is "Wiki_Images.csv"
--q, --quietmode : Suppresses output on terminal
--u, --user : Specifies user. Default is "Tagooty"
--m, --maxfiles : Specifies maximum number of images to filter through
--c, --countonly : If only image and number of wikis featured in is to be displayed
--v, --version : Version number
+-q, --quietmode             : Suppresses output on terminal
+-u, --user                  : Specifies user. Default is "Tagooty"
+-m, --maxfiles              : Specifies maximum number of images to filter through
+-c, --countonly             : If only image and number of wikis featured in is to be displayed
+-v, --version               : Version number
 '''
 
 #---------------------------------------------#
@@ -120,7 +120,7 @@ for opt, arg in options:
     elif opt in ('-c', '--countonly'):
         COUNT_ONLY = True
     elif opt in ('-v','--version'):
-        print('Wiki Images\nVersion 1.2.2\nPratiksha Jain and Deepali Singh')
+        print('Wiki Images\n{}\nPratiksha Jain and Deepali Singh'.format(VERSION))
         RUN = False
 
 #---------------------------------------------#
@@ -240,6 +240,7 @@ def outputData(data, COUNT_ONLY):
             'Number of Wikis Featured In',
             'Quality Image',
             'Featured Image',
+            'Valued Image'
         ]
 
         df = pd.DataFrame(columns=headers) # Initialisng an empty dataframe to store elements in data
@@ -250,6 +251,7 @@ def outputData(data, COUNT_ONLY):
                             'Number of Wikis Featured In' : len(obj.usage_on_wikis),
                             'Quality Image' : obj.is_quality_image,
                             'Featured Image' : obj.is_featured_image,
+                            'Valued Image' : obj.is_valued_image,
                         }, ignore_index=True) 
 
     else:
