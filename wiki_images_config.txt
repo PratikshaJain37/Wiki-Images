@@ -1,0 +1,6 @@
+#add your parameter values below  
+
+OUTPUT_FILE = 'Wiki_Images.csv' #add the name of your output file here -- in inverted commas
+USERS = [ 'Tagooty'] #add the required username(s)-- in inverted commas and seperated by commas 
+MAX_FILES = -1 #add the max files you want to search -- -1 (default) searches all files
+COUNT_ONLY = False #write True to count number of files only, without links
