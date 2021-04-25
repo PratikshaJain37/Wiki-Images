@@ -1,8 +1,10 @@
 """
 Wiki Images - Main script
-Version 1.2.2
+Version 1.3.1
 Authors : Pratiksha Jain, Deepali Singh
 
+Change Log: 27/3/2010 Chanchla K & TAG
+            Changed single USER to list USERS
 """
 #---------------------------------------------#
 '''
@@ -61,11 +63,6 @@ import time
 
 # Initializing counters for Summary Info
 counter_time = time.time() # To check time taken
-counter_qualityImage = 0 # Number of quality images
-counter_featuredImage = 0 # Number of featured images
-counter_valuedImage = 0 # Number of valued images
-counter_dataFiltered = 0 # Number of media featured on other wikis
-counter_UsageOnWikis = 0 # Number of pages which media has been featured in
 
 #---------------------------------------------#
 
@@ -75,23 +72,29 @@ RUN = True  # For running the code
 HELP_MENU = False  #For help menu options
 OUTPUT_FILE = 'Wiki_Images.csv' # Output of program
 QUIET_MODE = False  # If no updates to be given while processing
-USER = 'Tagooty' # For user name
+# Usernames are case-sensitive as they are used in URLs
+
+#USERS = ['Navneetsharmaiit', 'ADARSHluck', ,
+#        'PortiaSingh', 'Swati_IIT_Mandi', 'Tagooty',
+#        'Debashritaiitmandi', 'Reinventlife']
+
+USERS = ['Tagooty']
 MAX_FILES = -1  # Max files by user to search
 COUNT_ONLY = False # Count number of files only, without links
 SUMMARY_INFO = True
-VERSION = 'v1.2.2'
+VERSION = 'v1.3.1'
 
 HELP_OPTIONS = '''
 Wiki Images
-v1.2.2
+v1.3.1
 Authors: Pratiksha Jain, Deepali Singh
--h, --help                  : Displays Help Menu
+-h, --help : Displays Help Menu
 -o, --outputfile <filename> : In case output is to be made on different file. Default is "Wiki_Images.csv"
--q, --quietmode             : Suppresses output on terminal
--u, --user                  : Specifies user. Default is "Tagooty"
--m, --maxfiles              : Specifies maximum number of images to filter through
--c, --countonly             : If only image and number of wikis featured in is to be displayed
--v, --version               : Version number
+-q, --quietmode : Suppresses output on terminal
+-u, --user : comma-separated list of users. Default is "Tagooty"
+-m, --maxfiles : Specifies maximum number of images to filter through
+-c, --countonly : If only image and number of wikis featured in is to be displayed
+-v, --version : Version number
 '''
 
 #---------------------------------------------#
@@ -114,13 +117,15 @@ for opt, arg in options:
     elif opt in ('-q', '--quietmode'):
         QUIET_MODE = True
     elif opt in ('-u', '--user'):
-        USER = arg
+        USERS = arg
+        if isinstance(USERS, str):
+            USERS = USERS.split(", ")
     elif opt in ('-m', '--maxfiles'):
         MAX_FILES = arg
     elif opt in ('-c', '--countonly'):
         COUNT_ONLY = True
     elif opt in ('-v','--version'):
-        print('Wiki Images\n{}\nPratiksha Jain and Deepali Singh'.format(VERSION))
+        print('Wiki Images\nVersion 1.3.1\nPratiksha Jain and Deepali Singh')
         RUN = False
 
 #---------------------------------------------#
@@ -128,9 +133,10 @@ for opt, arg in options:
 # Defining classes for database
 
 # Attributes of Wiki Image class corresponds to the columns in the main table on - attributes can be added/removed easily
-# https://commons.wikimedia.org/wiki/Special:ListFiles?limit=500&user=Tagooty
+# For reference: https://commons.wikimedia.org/wiki/Special:ListFiles?limit=500&user=Tagooty
 # The is_quality)image and is_featured_image attributes have been initialised with None (blank) values - only True if true
 # The usage_on_wikis attribute contains a list of pages where it has been used on other wikis
+# The user attribute specifies which user owns that image
 
 class wiki_image():
     timestamp = False 
@@ -139,30 +145,37 @@ class wiki_image():
     is_quality_image = None
     is_featured_image = None
     is_valued_image = None
+    user = None
+    is_used_in_other_wikis = False # For counter for amount of data got after filtering
     usage_on_wikis = []  # List of wiki_pages
-
+    
 # Attributes of each wiki_page correspond to the name and link of each of the required pages. 
 class wiki_page():
     name = False
     link = False
 
+class list_wiki(list):
+    def query(self, parameter, value):
+        queried_list = []
+        for item in self:
+            if getattr(item, parameter) == value:
+                queried_list.append(item)
+        return queried_list
+
 #---------------------------------------------#
 
 # STEP 1: Extracting data from Main Wiki and storing in a database
-
-def parseData(USER='Tagooty', baseurl='https://commons.wikimedia.org/wiki/Special:ListFiles?limit=500&user=', url=False):
+def parseData(USER="", baseurl='https://commons.wikimedia.org/wiki/Special:ListFiles?limit=500&user=', url=False):
     if not url: # Defining the URL
         URL = baseurl + USER
     else:
         URL = url
-
     page = requests.get(URL) # Getting the content
     soup = BeautifulSoup(page.content, 'html.parser') # For parsing the content in the mentioned URL
     return soup
 
-def extractData(soup, MAX_FILES):
-    
-    data = [] # Initialising empty list for storing wiki_image elements
+def extractData(soup, MAX_FILES, user):
+    data = list_wiki() # Initialising empty list for storing wiki_image elements
     table = soup.find("table", attrs={"class": 'mw-datatable listfiles'}) # Finding required table
 
     for row in table.tbody.find_all("tr"): # Iterating over all the row elements in table
@@ -174,11 +187,11 @@ def extractData(soup, MAX_FILES):
             if link["href"].startswith("/wiki/File:"): # Finding the link which starts with 'File'
                 link["title"] = link["title"].replace("File:", "")
                 link["title"] = link["title"].replace(".jpg", "") # Cleaning name 
+                temp.user = user
                 temp.name = link["title"]
                 temp.path = "https://commons.wikimedia.org" + link["href"]
                 break    
-        data.append(temp) # Adding the wiki_image instance to the database
- 
+        data.append(temp) # Adding the wiki_image instance to the database)
     if MAX_FILES == -1: # Condition for max_files to go through
         return data
     else:
@@ -194,13 +207,10 @@ def extractData(soup, MAX_FILES):
 
 
 def collectData(obj):
-    # global variables-counters
-    global counter_featuredImage, counter_qualityImage, counter_valuedImage, counter_UsageOnWikis
 
     soup_images = parseData(url=obj.path) # Visiting page for each image (object)
     heading = soup_images.find("div", attrs={"id": 'mw-imagepage-section-globalusage'})  # Accessing section "File usage on other wikis" (if it exists)
-    obj.usage_on_wikis = [] # Initialising empty variable
-    bool_dataFiltered = False  # For counter for amount of data got after filtering
+    obj.usage_on_wikis = [] # Initialising empty variable 
 
     if heading is not None:  
         for index, link in enumerate(heading.find_all("a", href=True)): # Finding 'wiki page' names and links 
@@ -211,23 +221,18 @@ def collectData(obj):
                 temp_images.name = link.text  # Saving names of each wiki page correspoding the respective image (object) in class wiki_pages()
                 temp_images.link = link["href"]  # Saving links of each wiki page correspoding the respective image (object) in class wiki_pages() 
                 obj.usage_on_wikis.append(temp_images)  # Appending the wiki_page() database in the list usage_in_wikis
-                bool_dataFiltered = True      
-    
-    counter_UsageOnWikis += len(obj.usage_on_wikis)
+                obj.is_used_in_other_wikis = True      
 
     if 'This image has been assessed using the Quality image guidelines and is considered a Quality image.' in soup_images.text:  # Checking if it is a 'Quality Image'
         obj.is_quality_image = True   
-        counter_qualityImage += 1
     
     if 'This is a featured picture on' in soup_images.text:  # Checking if it is a 'Featured Image'  
         obj.is_featured_image = True 
-        counter_featuredImage += 1
 
     if 'This image has been assessed under the valued image criteria and is considered the most valued image on Commons' in soup_images.text:  # Checking if it is a 'Valued Image'  
         obj.is_valued_image = True 
-        counter_valuedImage += 1
 
-    return obj, bool_dataFiltered
+    return obj
 
 #---------------------------------------------#
 
@@ -236,6 +241,7 @@ def collectData(obj):
 def outputData(data, COUNT_ONLY):
     if COUNT_ONLY == True: # If only count of wikis featured in is required
         headers = [
+            'User',
             'Name',
             'Number of Wikis Featured In',
             'Quality Image',
@@ -247,6 +253,7 @@ def outputData(data, COUNT_ONLY):
 
         for obj in data: # Storing all the required links and infomation in the dataframe   
             df = df.append({
+                            'User' : obj.user,
                             'Name' : obj.name,
                             'Number of Wikis Featured In' : len(obj.usage_on_wikis),
                             'Quality Image' : obj.is_quality_image,
@@ -256,6 +263,7 @@ def outputData(data, COUNT_ONLY):
 
     else:
         headers = [
+        'User',
         'Name', 
         #'Path',
         #'Time Stamp',
@@ -275,6 +283,7 @@ def outputData(data, COUNT_ONLY):
                 for index, page in enumerate(obj.usage_on_wikis):  # Uncomment if-else statement in the loop -- in case you want multiple usage_on_wikis links to appear on separate lines (with white spaces in Featured-In column)
                     # if index == 0:
                         df = df.append({
+                            'User': obj.user,
                             'Name' : obj.name,
                             #'Path' : obj.path,
                             #'Time Stamp' : obj.timestamp,
@@ -291,7 +300,41 @@ def outputData(data, COUNT_ONLY):
                     
                     #     }, ignore_index=True)
     return df
+
+def summarizeData(data):
+    
+    counters = {
+    'qualityImage' : 0, # Number of quality images
+    'featuredImage' : 0, # Number of featured images
+    'valuedImage' : 0, # Number of valued images
+    'counter_dataFiltered' : 0, # Number of media featured on other wikis
+    'counter_UsageOnWikis' : 0, # Number of pages which media has been featured in
+}
+
+    for obj in data:
+        if obj.is_quality_image == True:  
+            counters['qualityImage'] += 1
+    
+        if obj.is_featured_image == True:
+            counters['featuredImage'] += 1
+
+        if obj.is_valued_image == True: 
+            counters['valuedImage'] += 1
         
+        if obj.usage_on_wikis != 0:
+            counters['counter_UsageOnWikis'] += len(obj.usage_on_wikis)
+            
+        if obj.is_used_in_other_wikis == True:    
+            counters['counter_dataFiltered'] += 1
+
+    print("*Total media found --", len(data))
+    print("*Number of media used in other wikis --", str(counters['counter_dataFiltered']) + " (" + str(round(counters['counter_dataFiltered']/len(data)*100,2))+"%)")
+    print("*Total pages which have the media featured on them -- ", str(counters['counter_UsageOnWikis']))
+    print("*Total number of Quality Images -- ", counters['qualityImage'])
+    print("*Total number of Featured Images -- ", counters['featuredImage'])
+    print("*Total number of Valued Images -- ", counters['valuedImage'])
+    print()
+
 #---------------------------------------------#
 
 # Driver Code
@@ -299,9 +342,11 @@ def outputData(data, COUNT_ONLY):
 if RUN == False: # Main check
     sys.exit()
 
+data = list_wiki()
 if QUIET_MODE == True: # If no output is to be given in terminal
-    soup = parseData(USER=USER)
-    data = extractData(soup, MAX_FILES)
+    for u in USERS:
+        soup = parseData(u)
+        data = data + extractData(soup, MAX_FILES, u)
     
     for obj in data: # Iterating over data
         obj_filtered, bool_dataFiltered = collectData(obj)
@@ -310,14 +355,16 @@ if QUIET_MODE == True: # If no output is to be given in terminal
     df = outputData(data, COUNT_ONLY)
 
 else:   # progress bar – QUIET_MODE == True (default)
-    soup = parseData(USER=USER)
-    data = extractData(soup, MAX_FILES)
-    print("\nData parsed and extracted.\n")
+    print("Parsing and extracting data for: ", end="")
+    for u in USERS:
+        print(u+", ", end="", flush=True)
+        soup = parseData(u)
+        data = list_wiki(data + extractData(soup, MAX_FILES,u))
+        
+    print(" [Done]\n")
+
     for obj, perc in zip(data, tqdm (range(len(data)), initial=1, desc="Filtering data...")): # Iterating over data, and showing progress bar
-        obj_filtered, bool_dataFiltered = collectData(obj)
-        obj = obj_filtered
-        if bool_dataFiltered == True: # Condition - if it featured in other wikis
-            counter_dataFiltered += 1
+        obj_filtered = collectData(obj)
     print("Filering complete.")
 
     df = outputData(data, COUNT_ONLY) # Getting output as pandas dataframe
@@ -325,13 +372,19 @@ else:   # progress bar – QUIET_MODE == True (default)
 df.to_csv(OUTPUT_FILE, index=False, header=True) # Giving output in csv file
 print("\nExporting Complete. The csv file can be found as %s in your folder."%(OUTPUT_FILE))
 
-print("\nSUMMARY INFO:")      #summary info
-print("*Total media found --", len(data))
-print("*Number of media used in other wikis --", str(counter_dataFiltered) + " (" + str(round(counter_dataFiltered/len(data)*100,2))+"%)")
-print("*Total pages which have the media featured on them -- ", str(counter_UsageOnWikis))
-print("*Total number of Quality Images -- ", counter_qualityImage)
-print("*Total number of Featured Images -- ", counter_featuredImage)
-print("*Total number of Valued Images -- ", counter_valuedImage)
+print("\nSUMMARY INFO: for users", USERS)
+summarizeData(data)
 print ("\n--- %s seconds taken ---" % round((time.time() - counter_time),2))
+print()
+
+#---------------------------------------------#
+
+# Summary info for each individual user 
+# EDIT HERE: if specifics of other parameters (of class wiki_images - narely: timestamp, name, path, is_quality_image, is_featured_image, is_valued_image, user, is_used_in_other_wikis, usage_on_wikis) are wanted - refer to function query under class:list_wiki (defined above) for format
+
+for u in USERS:
+    print("\nSUMMARY INFO: for user- ", u)
+    data_user = data.query('user', u)
+    summarizeData(data_user)
 
 #---------------------------------------------#
