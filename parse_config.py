@@ -11,6 +11,10 @@ OUTPUT_FILE = OUTPUT_FILE.replace("OUTPUT_FILE=", "")       #accessing the .csv 
 USERS = re.search(r'USERS( *)=( *)(\[)(( *)\'(.*)\'( *)?(,?)( *)?)+(\])', string, re.M|re.I).group()
 USERS = USERS.replace(" ", "")      #removing whitespaces
 USERS = USERS.replace("USERS=", "")       #accessing the usernames
+USERS = USERS.replace("[", "")       #removing square brackets
+USERS = USERS.replace("]", "")   
+USERS = USERS.replace("\'", "")       #removing inverted commas
+USERS = USERS.split(",")              #converting to a list 
 
 
 MAX_FILES = re.search(r'MAX_FILES( *)=( *)(-?)(\d)+', string, re.M|re.I).group()

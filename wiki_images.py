@@ -68,19 +68,11 @@ counter_time = time.time() # To check time taken
 
 # Defining System Variables
 
+from parse_config import *
+
 RUN = True  # For running the code
 HELP_MENU = False  #For help menu options
-OUTPUT_FILE = 'Wiki_Images.csv' # Output of program
 QUIET_MODE = False  # If no updates to be given while processing
-# Usernames are case-sensitive as they are used in URLs
-
-#USERS = ['Navneetsharmaiit', 'ADARSHluck', ,
-#        'PortiaSingh', 'Swati_IIT_Mandi', 'Tagooty',
-#        'Debashritaiitmandi', 'Reinventlife']
-
-USERS = ['Tagooty']
-MAX_FILES = -1  # Max files by user to search
-COUNT_ONLY = False # Count number of files only, without links
 SUMMARY_INFO = True
 VERSION = 'v1.3.1'
 
