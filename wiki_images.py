@@ -1,6 +1,6 @@
 """
 Wiki Images - Main script
-Version 1.3.1
+Version 1.3.2
 Authors : Pratiksha Jain, Deepali Singh
 
 Change Log: 27/3/2010 Chanchla K & TAG
@@ -74,11 +74,11 @@ RUN = True  # For running the code
 HELP_MENU = False  #For help menu options
 QUIET_MODE = False  # If no updates to be given while processing
 SUMMARY_INFO = True
-VERSION = 'v1.3.1'
+VERSION = 'v1.3.2'
 
 HELP_OPTIONS = '''
 Wiki Images
-v1.3.1
+v1.3.2
 Authors: Pratiksha Jain, Deepali Singh
 -h, --help : Displays Help Menu
 -o, --outputfile <filename> : In case output is to be made on different file. Default is "Wiki_Images.csv"
@@ -117,7 +117,7 @@ for opt, arg in options:
     elif opt in ('-c', '--countonly'):
         COUNT_ONLY = True
     elif opt in ('-v','--version'):
-        print('Wiki Images\nVersion 1.3.1\nPratiksha Jain and Deepali Singh')
+        print('Wiki Images\nVersion 1.3.2\nPratiksha Jain and Deepali Singh')
         RUN = False
 
 #---------------------------------------------#
@@ -301,7 +301,10 @@ def summarizeData(data):
     'valuedImage' : 0, # Number of valued images
     'counter_dataFiltered' : 0, # Number of media featured on other wikis
     'counter_UsageOnWikis' : 0, # Number of pages which media has been featured in
-}
+    }
+
+    # Temporary variable for links master list
+    temp_usage_on_wikis_list = []
 
     for obj in data:
         if obj.is_quality_image == True:  
@@ -314,10 +317,13 @@ def summarizeData(data):
             counters['valuedImage'] += 1
         
         if obj.usage_on_wikis != 0:
-            counters['counter_UsageOnWikis'] += len(obj.usage_on_wikis)
+            temp_usage_on_wikis_list += [page.link for page in obj.usage_on_wikis]
             
         if obj.is_used_in_other_wikis == True:    
             counters['counter_dataFiltered'] += 1
+    
+    # Removing duplicates
+    counters['counter_UsageOnWikis'] = len(set(temp_usage_on_wikis_list))
 
     print("*Total media found --", len(data))
     print("*Number of media used in other wikis --", str(counters['counter_dataFiltered']) + " (" + str(round(counters['counter_dataFiltered']/len(data)*100,2))+"%)")
@@ -338,7 +344,7 @@ data = list_wiki()
 if QUIET_MODE == True: # If no output is to be given in terminal
     for u in USERS:
         soup = parseData(u)
-        data = data + extractData(soup, MAX_FILES, u)
+        data = list_wiki(data + extractData(soup, MAX_FILES, u))
     
     for obj in data: # Iterating over data
         obj_filtered, bool_dataFiltered = collectData(obj)

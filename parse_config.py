@@ -5,7 +5,8 @@ string = configFile.read()
 
 OUTPUT_FILE = re.search(r'OUTPUT_FILE( *)=(( *)\'(.*).csv\'( *)?(,?)( *)?)+', string, re.M|re.I).group()
 OUTPUT_FILE = OUTPUT_FILE.replace(" ", "")      #removing whitespaces
-OUTPUT_FILE = OUTPUT_FILE.replace("OUTPUT_FILE=", "")       #accessing the .csv file names
+OUTPUT_FILE = OUTPUT_FILE.replace("OUTPUT_FILE=", "")       
+OUTPUT_FILE = OUTPUT_FILE.replace("'", "") #accessing the .csv file names
 
 
 USERS = re.search(r'USERS( *)=( *)(\[)(( *)\'(.*)\'( *)?(,?)( *)?)+(\])', string, re.M|re.I).group()
