@@ -1,10 +1,10 @@
 """
 Wiki Images - Main script
-Version 1.3.2
+Version 1.3.3
 Authors : Pratiksha Jain, Deepali Singh
 
 Change Log: 27/3/2010 Chanchla K & TAG
-            Changed single USER to list USERS
+            Changed single USER to list users
 """
 #---------------------------------------------#
 '''
@@ -68,13 +68,13 @@ counter_time = time.time() # To check time taken
 
 # Defining System Variables
 
-from parse_config import *
+from config import * #importing from config file
 
 RUN = True  # For running the code
 HELP_MENU = False  #For help menu options
-QUIET_MODE = False  # If no updates to be given while processing
-SUMMARY_INFO = True
-VERSION = 'v1.3.2'
+VERSION = 'v1.3.3'
+summary_info = True
+quiet_mode = False  # If no updates to be given while processing
 
 HELP_OPTIONS = '''
 Wiki Images
@@ -105,17 +105,17 @@ for opt, arg in options:
         print(HELP_OPTIONS)
         RUN = False
     elif opt in ('-o', '--outputfile'):
-        OUTPUT_FILE = arg + '.csv'
+        output_file = arg + '.csv'
     elif opt in ('-q', '--quietmode'):
-        QUIET_MODE = True
+        quiet_mode = True
     elif opt in ('-u', '--user'):
-        USERS = arg
-        if isinstance(USERS, str):
-            USERS = USERS.split(", ")
+        users = arg
+        if isinstance(users, str):
+            users = users.split(", ")
     elif opt in ('-m', '--maxfiles'):
-        MAX_FILES = arg
+        max_files = arg
     elif opt in ('-c', '--countonly'):
-        COUNT_ONLY = True
+        count_only = True
     elif opt in ('-v','--version'):
         print('Wiki Images\nVersion 1.3.2\nPratiksha Jain and Deepali Singh')
         RUN = False
@@ -166,7 +166,7 @@ def parseData(USER="", baseurl='https://commons.wikimedia.org/wiki/Special:ListF
     soup = BeautifulSoup(page.content, 'html.parser') # For parsing the content in the mentioned URL
     return soup
 
-def extractData(soup, MAX_FILES, user):
+def extractData(soup, max_files, user):
     data = list_wiki() # Initialising empty list for storing wiki_image elements
     table = soup.find("table", attrs={"class": 'mw-datatable listfiles'}) # Finding required table
 
@@ -184,10 +184,10 @@ def extractData(soup, MAX_FILES, user):
                 temp.path = "https://commons.wikimedia.org" + link["href"]
                 break    
         data.append(temp) # Adding the wiki_image instance to the database)
-    if MAX_FILES == -1: # Condition for max_files to go through
+    if max_files == -1: # Condition for max_files to go through
         return data
     else:
-        return data[:min(MAX_FILES, len(data))]
+        return data[:min(max_files, len(data))]
 
 #---------------------------------------------#
 
@@ -230,8 +230,8 @@ def collectData(obj):
 
 # Step 3: Displaying it in a .csv file
 
-def outputData(data, COUNT_ONLY):
-    if COUNT_ONLY == True: # If only count of wikis featured in is required
+def outputData(data, count_only):
+    if count_only == True: # If only count of wikis featured in is required
         headers = [
             'User',
             'Name',
@@ -341,23 +341,23 @@ if RUN == False: # Main check
     sys.exit()
 
 data = list_wiki()
-if QUIET_MODE == True: # If no output is to be given in terminal
-    for u in USERS:
+if quiet_mode == True: # If no output is to be given in terminal
+    for u in users:
         soup = parseData(u)
-        data = list_wiki(data + extractData(soup, MAX_FILES, u))
+        data = list_wiki(data + extractData(soup, max_files, u))
     
     for obj in data: # Iterating over data
         obj_filtered, bool_dataFiltered = collectData(obj)
         obj = obj_filtered
     
-    df = outputData(data, COUNT_ONLY)
+    df = outputData(data, count_only)
 
-else:   # progress bar – QUIET_MODE == True (default)
+else:   # progress bar – quiet_mode == True (default)
     print("Parsing and extracting data for: ", end="")
-    for u in USERS:
+    for u in users:
         print(u+", ", end="", flush=True)
         soup = parseData(u)
-        data = list_wiki(data + extractData(soup, MAX_FILES,u))
+        data = list_wiki(data + extractData(soup, max_files,u))
         
     print(" [Done]\n")
 
@@ -365,12 +365,12 @@ else:   # progress bar – QUIET_MODE == True (default)
         obj_filtered = collectData(obj)
     print("Filering complete.")
 
-    df = outputData(data, COUNT_ONLY) # Getting output as pandas dataframe
+    df = outputData(data, count_only) # Getting output as pandas dataframe
     
-df.to_csv(OUTPUT_FILE, index=False, header=True) # Giving output in csv file
-print("\nExporting Complete. The csv file can be found as %s in your folder."%(OUTPUT_FILE))
+df.to_csv(output_file, index=False, header=True) # Giving output in csv file
+print("\nExporting Complete. The csv file can be found as %s in your folder."%(output_file))
 
-print("\nSUMMARY INFO: for users", USERS)
+print("\nSUMMARY INFO: for users", users)
 summarizeData(data)
 print ("\n--- %s seconds taken ---" % round((time.time() - counter_time),2))
 print()
@@ -380,7 +380,7 @@ print()
 # Summary info for each individual user 
 # EDIT HERE: if specifics of other parameters (of class wiki_images - narely: timestamp, name, path, is_quality_image, is_featured_image, is_valued_image, user, is_used_in_other_wikis, usage_on_wikis) are wanted - refer to function query under class:list_wiki (defined above) for format
 
-for u in USERS:
+for u in users:
     print("\nSUMMARY INFO: for user- ", u)
     data_user = data.query('user', u)
     summarizeData(data_user)
