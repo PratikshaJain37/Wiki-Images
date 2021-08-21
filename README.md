@@ -46,6 +46,7 @@ v1.3: Added support for multiple users (27/3/2010 Chanchla K & TAG)
 v1.3.1: Added function for filtering( query(),modified class:list), added summarizeData() function
 v1.3.2: Fixed bug #counters_usage_on_wiki
 v1.3.3: Fixed bug #config file - now in python
+v1.3.4: Implemented Threading
 
 
 ## Future Features 
@@ -53,7 +54,7 @@ v1.3.3: Fixed bug #config file - now in python
 2. Check for next page button - scrape data from "next page"
 3. Reduce rate at which requests are made (concept of (Δt, t))
 4. Implement threading
-5. Integrate Wikimedia Cimmons API
+5. Integrate Wikimedia Commons API
 6. Related Script: Automate filling of metadata
 
 

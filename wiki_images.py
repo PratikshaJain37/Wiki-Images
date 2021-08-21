@@ -1,6 +1,6 @@
 """
 Wiki Images - Main script
-Version 1.3.3
+Version 1.3.4
 Authors : Pratiksha Jain, Deepali Singh
 
 Change Log: 27/3/2010 Chanchla K & TAG
@@ -58,6 +58,8 @@ import getopt
 import sys
 from tqdm import tqdm
 import time
+import concurrent.futures
+import threading
 
 #---------------------------------------------#
 
@@ -72,7 +74,7 @@ from config import * #importing from config file
 
 RUN = True  # For running the code
 HELP_MENU = False  #For help menu options
-VERSION = 'v1.3.3'
+VERSION = 'v1.3.4'
 summary_info = True
 quiet_mode = False  # If no updates to be given while processing
 
@@ -147,6 +149,10 @@ class wiki_page():
     link = False
 
 class list_wiki(list):
+
+    thread_update_counter = 0
+    lock = threading.Lock()
+
     def query(self, parameter, value):
         queried_list = []
         for item in self:
@@ -154,10 +160,26 @@ class list_wiki(list):
                 queried_list.append(item)
         return queried_list
 
+    def update(self, obj, index):
+        obj_filtered = collectData(obj)
+        self[index] = obj_filtered
+        
+        with self.lock:
+            local_copy = self.thread_update_counter
+            local_copy += 1
+            self.thread_update_counter = local_copy
+        
+        print_log('Filtering %d of %d: (%s)'%(self.thread_update_counter, len(self), obj.name[:20]), end='\r')
+
+        ## Threading check ##
+        #print_log('Filtering %d of %d: (%d: %s)'%(self.thread_update_counter, len(self), index, obj.name[:20]), end='\r')
+        
+        
+    
 #---------------------------------------------#
 
 # STEP 1: Extracting data from Main Wiki and storing in a database
-def parseData(USER="", baseurl='https://commons.wikimedia.org/wiki/Special:ListFiles?limit=500&user=', url=False):
+def parseData(USER="", baseurl='https://commons.wikimedia.org/wiki/Special:ListFiles?limit=9999999&user=', url=False):
     if not url: # Defining the URL
         URL = baseurl + USER
     else:
@@ -325,50 +347,48 @@ def summarizeData(data):
     # Removing duplicates
     counters['counter_UsageOnWikis'] = len(set(temp_usage_on_wikis_list))
 
-    print("*Total media found --", len(data))
-    print("*Number of media used in other wikis --", str(counters['counter_dataFiltered']) + " (" + str(round(counters['counter_dataFiltered']/len(data)*100,2))+"%)")
-    print("*Total pages which have the media featured on them -- ", str(counters['counter_UsageOnWikis']))
-    print("*Total number of Quality Images -- ", counters['qualityImage'])
-    print("*Total number of Featured Images -- ", counters['featuredImage'])
-    print("*Total number of Valued Images -- ", counters['valuedImage'])
-    print()
+    print_log("*Total media found -- %d" %(len(data)))
+    print_log("*Number of media used in other wikis -- {} ({}%)".format(counters['counter_dataFiltered'],
+    counters['counter_dataFiltered']/len(data)*100))
+    print_log("*Total pages which have the media featured on them -- %d"%(counters['counter_UsageOnWikis']))
+    print_log("*Total number of Quality Images -- %d"%(counters['qualityImage']))
+    print_log("*Total number of Featured Images -- %d"%( counters['featuredImage']))
+    print_log("*Total number of Valued Images -- %d"%( counters['valuedImage']))
+    print_log("\n")
 
 #---------------------------------------------#
 
+def print_log(message, end='\n'):
+    global quiet_mode
+    if quiet_mode == False:
+        print (message, end=end)
+
+#---------------------------------------------#
 # Driver Code
 
 if RUN == False: # Main check
     sys.exit()
 
-data = list_wiki()
-if quiet_mode == True: # If no output is to be given in terminal
-    for u in users:
-        soup = parseData(u)
-        data = list_wiki(data + extractData(soup, max_files, u))
-    
-    for obj in data: # Iterating over data
-        obj_filtered, bool_dataFiltered = collectData(obj)
-        obj = obj_filtered
-    
-    df = outputData(data, count_only)
+data = list_wiki() # Creating empty list
 
-else:   # progress bar – quiet_mode == True (default)
-    print("Parsing and extracting data for: ", end="")
-    for u in users:
-        print(u+", ", end="", flush=True)
-        soup = parseData(u)
-        data = list_wiki(data + extractData(soup, max_files,u))
-        
-    print(" [Done]\n")
+print_log("Parsing and extracting data for: ", end='')
+for u in users:
+    soup = parseData(u)
+    data = list_wiki(data + extractData(soup, max_files, u))
+    print_log(u, end='')
+print_log("... [Done] \n")
 
-    for obj, perc in zip(data, tqdm (range(len(data)), initial=1, desc="Filtering data...")): # Iterating over data, and showing progress bar
-        obj_filtered = collectData(obj)
-    print("Filering complete.")
 
-    df = outputData(data, count_only) # Getting output as pandas dataframe
-    
+with concurrent.futures.ThreadPoolExecutor(max_workers=100) as executor:
+    for index, obj in enumerate(data):
+        executor.submit(data.update, obj, index)
+print_log("\nFiltering [Done]")
+
+df = outputData(data, count_only)
+   
+print_log("\nExporting...", end='\r')
 df.to_csv(output_file, index=False, header=True) # Giving output in csv file
-print("\nExporting Complete. The csv file can be found as %s in your folder."%(output_file))
+print_log("Exporting [Done]\nThe csv file can be found as %s in your folder."%(output_file))
 
 print("\nSUMMARY INFO: for users", users)
 summarizeData(data)
@@ -381,7 +401,7 @@ print()
 # EDIT HERE: if specifics of other parameters (of class wiki_images - narely: timestamp, name, path, is_quality_image, is_featured_image, is_valued_image, user, is_used_in_other_wikis, usage_on_wikis) are wanted - refer to function query under class:list_wiki (defined above) for format
 
 for u in users:
-    print("\nSUMMARY INFO: for user- ", u)
+    print_log("\nSUMMARY INFO: for user- ", u)
     data_user = data.query('user', u)
     summarizeData(data_user)
 

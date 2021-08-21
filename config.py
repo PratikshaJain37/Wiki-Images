@@ -1,6 +1,6 @@
 """
 Wiki Images - config file
-Version 1.3.3
+Version 1.3.4
 Authors : Pratiksha Jain, Deepali Singh
 
 """
