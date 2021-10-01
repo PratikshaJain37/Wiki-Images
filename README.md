@@ -1,21 +1,11 @@
 # README - wiki_images.py
 
 ## Description
-A python script to display information about a user's contributions to Wikimedia Commons. A .csv is generated with all the wikipedia pages where the images are used.
+A python script to display information about a list of users contributions to Wikimedia Commons. A .csv is generated with all the wikipedia pages where the images are used.
 
-## Requirements
+## Tech Stack Used
 The script is mainly Python3.7 compliant.
-The libraries needed are:
-1. requests 2.24.0
-(https://pypi.org/project/requests/)
-2. beautifulsoup4 4.9.3
-(https://pypi.org/project/beautifulsoup4/)
-3. pandas 1.1.3
-(https://pypi.org/project/pandas/)
-4. tqdm 4.54.0
-(https://pypi.org/project/tqdm/)
-5. time 
-GNU time 1.7
+The major libraries used are *beautifulsoup, threading, configparser, requests, and pandas*.
 
 ## Installation
 For running the script (inside a virtual environment):
@@ -46,16 +36,15 @@ A new csv file, with the name 'Wiki_Images.csv' will appear, which has the requi
 - v1.3.1: Added function for filtering( query(),modified class:list), added summarizeData() function
 - v1.3.2: Fixed bug #counters_usage_on_wiki
 - v1.3.3: Fixed bug #config file - now in python
-- v1.3.4: Implemented Threading
+- v1.3.4: Implemented Threading, Fixed bug #checking for all the available pages at once
+- v1.3.5: Handled error during server overload/network congestion in threading, Config file now in .ini, 
 
 
 ## Future Features 
 1. Check last updated and fetch only new information
-2. Check for next page button - scrape data from "next page"
-3. Reduce rate at which requests are made (concept of (Δt, t))
-4. Implement threading
-5. Integrate Wikimedia Commons API
-6. Related Script: Automate filling of metadata
+2. Reduce rate at which requests are made (concept of (Δt, t))
+3. Integrate Wikimedia Commons API
+4. Related Script: Automate filling of metadata
 
 
 ## Maintainers and Contributors
