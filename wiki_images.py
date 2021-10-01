@@ -60,6 +60,7 @@ from tqdm import tqdm
 import time
 import concurrent.futures
 import threading
+from configparser import ConfigParser
 
 #---------------------------------------------#
 
@@ -67,10 +68,19 @@ import threading
 counter_time = time.time() # To check time taken
 
 #---------------------------------------------#
+# Parsing Configuration File
 
+parser = ConfigParser(inline_comment_prefixes = "#")
+parser.read('config.ini')
+
+output_file = parser.get('parameters', 'output_file')
+users = list(map(str, parser.get('parameters', 'users').split(",")))
+users = [i.strip() for i in users]
+max_files = int(parser.get('parameters', 'max_files'))
+count_only = bool(parser.get('parameters', 'count_only'))
+
+#---------------------------------------------#
 # Defining System Variables
-
-from config import * #importing from config file
 
 RUN = True  # For running the code
 HELP_MENU = False  #For help menu options
