@@ -184,9 +184,23 @@ def parseData(USER="", baseurl='https://commons.wikimedia.org/wiki/Special:ListF
         URL = baseurl + USER
     else:
         URL = url
-    page = requests.get(URL) # Getting the content
+    page = getData(URL)
     soup = BeautifulSoup(page.content, 'html.parser') # For parsing the content in the mentioned URL
     return soup
+
+# Getting the content, and associated error handling
+def getData(URL):
+
+    tries = 0
+    while tries < 5:
+        page = requests.get(URL) 
+        if page.status_code == 200:
+            return page
+        if tries == 2:
+            time.sleep(5)
+        tries += 1
+    
+    sys.exit('[ERROR] Exiting program: Status code of %s is %s'%(URL, page.status_code))
 
 def extractData(soup, max_files, user):
     data = list_wiki() # Initialising empty list for storing wiki_image elements
